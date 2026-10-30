@@ -1,1106 +1,1440 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mr. Rushton's Basics in Learning & Math! 2</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Three.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&family=VT323&display=swap');
-
-    body, html {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      user-select: none;
-      background-color: #000;
-      font-family: 'Comic Neue', cursive;
-    }
-
-    .retro-font {
-      font-family: 'VT323', monospace;
-    }
-
-    /* CRT scanline overlay effect */
-    .crt::after {
-      content: " ";
-      display: block;
-      position: absolute;
-      top: 0; left: 0; bottom: 0; right: 0;
-      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-      z-index: 20;
-      background-size: 100% 4px, 6px 100%;
-      pointer-events: none;
-    }
-
-    #crosshair {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 10px;
-      height: 10px;
-      margin-top: -5px;
-      margin-left: -5px;
-      pointer-events: none;
-      z-index: 10;
-    }
-
-    .comic-box {
-      border: 4px solid #000;
-      box-shadow: 6px 6px 0px #000;
-    }
-
-    .retro-btn {
-      background: linear-gradient(180deg, #facc15 0%, #ca8a04 100%);
-      border: 4px solid #000;
-      box-shadow: 4px 4px 0px #000;
-      transition: all 0.1s;
-    }
-
-    .retro-btn:active {
-      transform: translate(2px, 2px);
-      box-shadow: 2px 2px 0px #000;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mr. Rushton's Basics in Education and Learning 3D</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'VT323', monospace;
+            background-color: #1e3a8a;
+            user-select: none;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        .font-pixel {
+            font-family: 'Press Start 2P', cursive;
+        }
+        .scanlines::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.03) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.01), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.01));
+            z-index: 10;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+    </style>
 </head>
-<body class="crt relative">
+<body class="w-screen h-screen relative scanlines text-gray-900">
 
-  <!-- 3D Canvas Container -->
-  <div id="game-container" class="w-full h-full absolute inset-0"></div>
+    <!-- 3D Canvas Viewport -->
+    <div id="game-container" class="w-full h-full absolute top-0 left-0"></div>
 
-  <!-- HUD Crosshair -->
-  <div id="crosshair" class="flex items-center justify-center">
-    <div class="w-2.5 h-2.5 bg-yellow-300 rounded-full border border-black shadow"></div>
-  </div>
-
-  <!-- HUD Overlay -->
-  <div id="hud" class="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between z-10 hidden">
-    <!-- Top Bar -->
-    <div class="flex justify-between items-start">
-      <div class="bg-yellow-300 text-black px-4 py-2 rounded-xl border-4 border-black font-extrabold text-xl shadow-lg flex items-center gap-2">
-        <span>📚 Notebooks:</span>
-        <span id="notebook-count" class="text-2xl text-red-600">0/7</span>
-        <span class="ml-4">🪙 Coins:</span>
-        <span id="coin-count" class="text-2xl text-amber-700">0</span>
-      </div>
-
-      <!-- Item Slots & Fullscreen Toggle -->
-      <div class="flex gap-2 items-center pointer-events-auto">
-        <div id="item-0" class="w-16 h-16 bg-blue-600 border-4 border-black rounded-xl flex items-center justify-center text-3xl font-bold text-white shadow-lg"></div>
-        <div id="item-1" class="w-16 h-16 bg-blue-600 border-4 border-black rounded-xl flex items-center justify-center text-3xl font-bold text-white shadow-lg"></div>
-        <div id="item-2" class="w-16 h-16 bg-blue-600 border-4 border-black rounded-xl flex items-center justify-center text-3xl font-bold text-white shadow-lg"></div>
-        <button id="fullscreen-btn" title="Toggle Fullscreen" class="w-16 h-16 bg-yellow-400 hover:bg-yellow-500 border-4 border-black rounded-xl flex items-center justify-center text-2xl font-bold text-black shadow-lg transition transform active:scale-95">
-          ⛶
-        </button>
-      </div>
+    <!-- FPS Crosshair -->
+    <div id="crosshair" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20 flex items-center justify-center">
+        <div class="w-2.5 h-2.5 bg-yellow-400 rounded-full border border-black"></div>
     </div>
 
-    <!-- Center Interaction Prompt -->
-    <div id="interact-prompt" class="self-center bg-black/85 text-yellow-300 px-6 py-2 rounded-full border-2 border-yellow-400 font-bold text-lg hidden animate-bounce shadow-md">
-      Press [E] or Click to Interact
-    </div>
-
-    <!-- Bottom Bar -->
-    <div class="flex justify-between items-end">
-      <!-- Stamina Bar -->
-      <div class="w-64 bg-gray-900 border-4 border-black rounded-xl p-1 shadow-lg">
-        <div class="text-xs font-bold text-white px-1 mb-1">STAMINA [SHIFT]</div>
-        <div id="stamina-bar" class="h-5 bg-green-500 rounded-lg transition-all duration-75 w-full"></div>
-      </div>
-
-      <!-- Flashlight & Controls Hint -->
-      <div class="bg-yellow-300 text-black px-3 py-1 rounded-lg border-2 border-black font-bold text-xs shadow">
-        [WASD] Move | [F] Flashlight | [1-3] Item | [E] Interact | [Space] Drink Propel
-      </div>
-    </div>
-  </div>
-
-  <!-- Notification Msg -->
-  <div id="game-msg" class="absolute bottom-16 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-black px-6 py-2 border-4 border-black text-xl font-bold opacity-0 transition-opacity z-20 pointer-events-none shadow-2xl text-center rounded-xl">
-    Message
-  </div>
-
-  <!-- CHARACTER INTERACTION DIALOGUE MODAL -->
-  <div id="char-dialogue-modal" class="hidden absolute inset-0 bg-black/75 z-40 flex items-center justify-center p-4">
-    <div class="bg-yellow-300 border-8 border-black p-6 rounded-3xl max-w-md w-full text-black comic-box text-center space-y-4">
-      <h2 id="char-name" class="text-3xl font-black text-blue-900 uppercase">CHARACTER</h2>
-      <p id="char-text" class="text-xl font-bold bg-white p-4 border-4 border-black rounded-xl">"Dialogue line..."</p>
-      <button id="char-dialogue-close" class="retro-btn px-6 py-3 text-xl font-bold bg-green-500 hover:bg-green-400 text-white rounded-xl w-full cursor-pointer">
-        OK
-      </button>
-    </div>
-  </div>
-
-  <!-- Start Menu Screen -->
-  <div id="start-screen" class="absolute inset-0 bg-red-700 flex flex-col items-center justify-center z-30 p-4">
-    <div class="bg-yellow-300 p-8 rounded-3xl border-8 border-black max-w-xl w-full text-center comic-box space-y-4">
-      <h1 class="text-4xl sm:text-5xl font-black text-red-600 tracking-wide uppercase drop-shadow-md">
-        Mr. Rushton's Basics 2
-      </h1>
-      <p class="text-lg text-black font-bold">
-        In Learning & Math!
-      </p>
-
-      <div class="bg-white p-4 rounded-xl border-4 border-black text-left space-y-2 text-sm sm:text-base">
-        <p class="font-bold text-blue-800">📋 YOUR MISSION:</p>
-        <p>• Explore classrooms & <strong>the new Cafeteria</strong> to find <strong>7 Notebooks</strong>.</p>
-        <p>• Navigate wide, spacious school hallways.</p>
-        <p>• Answer 3 math problems per notebook terminal.</p>
-        <p>• <strong>Watch out for Mr. Rushton!</strong> He speeds up when you get questions wrong!</p>
-        <p>• Meet Zyker, Nono, Kiki, Myles Ori, and Tom in the school!</p>
-        <p>• Buy Propel drinks at Vending Machines using coins!</p>
-        <p>• Enter secret code <strong>67</strong> on any terminal!</p>
-      </div>
-
-      <button id="start-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-extrabold text-2xl py-4 rounded-2xl border-4 border-black comic-box transition transform hover:scale-105 active:scale-95">
-        CLICK TO ENTER SCHOOL! 🏫
-      </button>
-
-      <div class="text-xs font-bold text-gray-800 pt-2 border-t-2 border-black/20">
-        Made by Myles Ori, Arturo, Mason Ori, and Myles Web Design
-      </div>
-    </div>
-  </div>
-
-  <!-- Math Terminal Pop-up UI -->
-  <div id="math-terminal" class="absolute inset-0 bg-black/85 flex items-center justify-center z-30 hidden p-4">
-    <div class="bg-blue-900 border-8 border-yellow-400 p-6 rounded-3xl max-w-lg w-full text-white comic-box relative">
-      <div class="flex items-center gap-4 bg-blue-950 p-3 rounded-xl border-2 border-blue-700 mb-4">
-        <div class="w-16 h-16 bg-amber-600 rounded-full border-2 border-white flex items-center justify-center overflow-hidden">
-          <canvas id="rushton-avatar" width="64" height="64"></canvas>
+    <!-- HUD Overlay -->
+    <div id="hud" class="absolute top-0 left-0 right-0 p-4 flex justify-between items-start pointer-events-none z-20 text-shadow">
+        <div class="bg-blue-100/95 border-4 border-yellow-400 p-3 rounded-lg shadow-2xl flex flex-col gap-2 text-black">
+            <div class="text-blue-800 font-pixel text-xs sm:text-sm">MR. RUSHTON'S SCHOOLHOUSE</div>
+            <div class="text-xl sm:text-2xl font-bold">
+                Notebooks: <span id="notebook-count" class="text-red-600 font-bold">0/7</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="text-xs text-blue-900 font-pixel">STAMINA:</span>
+                <div class="w-32 sm:w-48 bg-gray-300 border-2 border-black h-4 rounded overflow-hidden">
+                    <div id="stamina-fill" class="bg-green-500 h-full w-full transition-all duration-75"></div>
+                </div>
+            </div>
         </div>
-        <div>
-          <div class="text-yellow-300 font-bold text-lg">Mr. Rushton Says:</div>
-          <div id="rushton-dialogue" class="text-sm font-semibold text-gray-200">"Answer all 3 questions to collect this notebook!"</div>
-        </div>
-      </div>
 
-      <!-- Question Box -->
-      <div class="bg-black border-4 border-green-500 p-4 rounded-xl mb-4 font-mono">
-        <div id="question-number" class="text-xs text-green-400 mb-1">QUESTION 1 OF 3</div>
-        <div id="question-text" class="text-2xl text-green-300 font-bold tracking-wider retro-font min-h-[40px] flex items-center">
-          2 + 2 = ?
+        <div class="bg-blue-100/95 border-4 border-yellow-400 p-2 sm:p-3 rounded-lg shadow-2xl flex items-center gap-2 pointer-events-auto">
+            <span class="text-xs text-blue-900 font-pixel hidden sm:inline">ITEMS:</span>
+            <div id="slot-0" onclick="useItem(0)" class="w-10 h-10 sm:w-12 sm:h-12 border-2 border-blue-600 bg-white rounded flex items-center justify-center text-2xl cursor-pointer hover:border-yellow-500 shadow"></div>
+            <div id="slot-1" onclick="useItem(1)" class="w-10 h-10 sm:w-12 sm:h-12 border-2 border-blue-600 bg-white rounded flex items-center justify-center text-2xl cursor-pointer hover:border-yellow-500 shadow"></div>
+            <div id="slot-2" onclick="useItem(2)" class="w-10 h-10 sm:w-12 sm:h-12 border-2 border-blue-600 bg-white rounded flex items-center justify-center text-2xl cursor-pointer hover:border-yellow-500 shadow"></div>
         </div>
-      </div>
-
-      <!-- Answer Form -->
-      <form id="math-form" class="flex gap-2">
-        <input type="text" id="math-input" autocomplete="off" placeholder="Answer..." class="flex-1 bg-white text-black px-4 py-3 rounded-xl text-xl font-bold border-4 border-black focus:outline-none focus:ring-4 focus:ring-yellow-400">
-        <button type="submit" class="bg-yellow-400 hover:bg-yellow-500 text-black font-extrabold px-6 py-3 rounded-xl border-4 border-black">
-          OK
-        </button>
-      </form>
     </div>
-  </div>
 
-  <!-- RED SHEET DETENTION MODAL -->
-  <div id="red-sheet-modal" class="hidden absolute inset-0 bg-red-950/95 z-50 flex flex-col items-center justify-center p-6 text-center">
-    <div class="bg-red-500 border-8 border-red-900 p-8 max-w-xl w-full text-black comic-box transform -rotate-1 animate-bounce shadow-2xl rounded-2xl">
-      <div class="border-4 border-dashed border-red-950 p-6 bg-red-100 rounded-xl">
-        <h1 class="text-5xl font-black text-red-800 mb-2 tracking-widest uppercase drop-shadow">RED SHEET!</h1>
-        <p class="text-2xl font-bold text-red-950 mb-4 underline">OFFICIAL DETENTION NOTICE</p>
-        <div class="text-left text-lg space-y-2 mb-6 font-mono text-gray-900 bg-white p-4 border-2 border-red-900 shadow-inner rounded-lg">
-          <p><strong>OFFENDER:</strong> PLAYER</p>
-          <p><strong>ISSUED BY:</strong> MR. RUSHTON</p>
-          <p><strong>REASON:</strong> <span id="detention-reason">Caught breaking school rules!</span></p>
-          <p class="text-red-700 font-bold mt-2 uppercase">PUNISHMENT: IMMEDIATE DETENTION & ALL NOTEBOOKS FORFEITED!</p>
-        </div>
-        <button id="restart-btn" class="retro-btn px-8 py-4 text-2xl font-bold bg-yellow-400 text-black hover:bg-yellow-300 w-full cursor-pointer rounded-xl">
-          TRY AGAIN
-        </button>
-      </div>
+    <!-- Interaction Prompt -->
+    <div id="interaction-prompt" class="absolute top-2/3 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-yellow-300 border-2 border-black font-pixel text-black px-4 py-2 text-xs sm:text-sm rounded pointer-events-none hidden z-20 shadow-lg">
+        Press [E] or Click to Interact
     </div>
-  </div>
 
-  <!-- VICTORY MODAL -->
-  <div id="victory-modal" class="hidden absolute inset-0 bg-yellow-400 z-50 flex flex-col items-center justify-center p-6 text-black text-center">
-    <h1 class="text-6xl font-black text-blue-800 mb-4">YOU ESCAPED!</h1>
-    <p class="text-2xl font-bold mb-6">You collected all 7 notebooks and escaped Mr. Rushton!</p>
-    <button id="victory-restart-btn" class="retro-btn px-10 py-4 text-3xl font-bold bg-green-400 hover:bg-green-300 rounded-xl">
-      PLAY AGAIN
-    </button>
-  </div>
-
-  <script>
-    /* =========================================================================
-       AUDIO SYNTHESIZER (WEB AUDIO API)
-       ========================================================================= */
-    class AudioSystem {
-      constructor() { this.ctx = null; }
-      init() {
-        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        if (this.ctx.state === 'suspended') this.ctx.resume();
-      }
-      playChime(isCorrect = true) {
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const freqs = isCorrect ? [523.25, 659.25, 783.99] : [180, 140, 100];
-        freqs.forEach((f, i) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = isCorrect ? 'sine' : 'sawtooth';
-          osc.frequency.setValueAtTime(f, now + i * 0.08);
-          gain.gain.setValueAtTime(0.3, now + i * 0.08);
-          gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.08 + 0.2);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(now + i * 0.08);
-          osc.stop(now + i * 0.08 + 0.2);
-        });
-      }
-      playBsoda() {
-        if (!this.ctx) return;
-        const bufferSize = this.ctx.sampleRate * 0.4;
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const output = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
-        const whiteNoise = this.ctx.createBufferSource();
-        whiteNoise.buffer = buffer;
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(1200, this.ctx.currentTime);
-        const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(0.6, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
-        whiteNoise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
-        whiteNoise.start();
-      }
-      playJumpScare() {
-        if (!this.ctx) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(90, this.ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(700, this.ctx.currentTime + 0.35);
-        gain.gain.setValueAtTime(1.0, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 1.2);
-        osc.connect(gain); gain.connect(this.ctx.destination);
-        osc.start(); osc.stop(this.ctx.currentTime + 1.2);
-      }
-    }
-    const audio = new AudioSystem();
-
-    /* =========================================================================
-       REALISTIC TEXTURE GENERATORS
-       ========================================================================= */
-    function createRushtonCanvas(width = 256, height = 256) {
-      const canvas = document.createElement('canvas');
-      canvas.width = width; canvas.height = height;
-      const ctx = canvas.getContext('2d');
-
-      // Black Polo Shirt with fabric texture
-      ctx.fillStyle = '#111827'; ctx.fillRect(70, 145, 116, 110);
-      ctx.fillStyle = '#1f2937';
-      ctx.beginPath(); ctx.moveTo(105, 145); ctx.lineTo(128, 175); ctx.lineTo(112, 185); ctx.lineTo(95, 155); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(151, 145); ctx.lineTo(128, 175); ctx.lineTo(144, 185); ctx.lineTo(161, 155); ctx.fill();
-
-      // Skin Tone with subtle depth shading
-      const grad = ctx.createRadialGradient(128, 82, 5, 128, 82, 45);
-      grad.addColorStop(0, '#ffedd5');
-      grad.addColorStop(1, '#fdba74');
-      ctx.fillStyle = grad; 
-      ctx.fillRect(114, 125, 28, 25);
-      ctx.beginPath(); ctx.arc(128, 82, 42, 0, Math.PI * 2); ctx.fill();
-
-      // Curly Ginger Hair
-      ctx.fillStyle = '#c2410c';
-      const curls = [
-        [100, 48, 12], [115, 42, 13], [128, 40, 14], [142, 42, 13], [156, 48, 12],
-        [90, 58, 11], [166, 58, 11], [88, 70, 10], [168, 70, 10], [92, 52, 11]
-      ];
-      curls.forEach(([cx, cy, cr]) => {
-        ctx.beginPath(); ctx.arc(cx, cy, cr, 0, Math.PI * 2); ctx.fill();
-      });
-
-      // Expressive Eyes & Eyebrows
-      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(113, 76, 7, 0, Math.PI * 2); ctx.arc(143, 76, 7, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#1d4ed8'; ctx.beginPath(); ctx.arc(113, 76, 3.5, 0, Math.PI * 2); ctx.arc(143, 76, 3.5, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#9a3412'; ctx.lineWidth = 4;
-      ctx.beginPath(); ctx.moveTo(103, 65); ctx.lineTo(122, 68); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(134, 68); ctx.lineTo(153, 65); ctx.stroke();
-
-      // Ginger Beard & Detailed Smile
-      ctx.fillStyle = '#c2410c';
-      ctx.beginPath();
-      ctx.moveTo(88, 80); ctx.quadraticCurveTo(85, 122, 128, 126); ctx.quadraticCurveTo(171, 122, 168, 80);
-      ctx.quadraticCurveTo(150, 96, 128, 96); ctx.quadraticCurveTo(106, 96, 88, 80);
-      ctx.fill();
-      ctx.beginPath(); ctx.moveTo(108, 92); ctx.quadraticCurveTo(128, 86, 148, 92); ctx.quadraticCurveTo(128, 100, 108, 92); ctx.fill();
-      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(128, 94, 9, 0, Math.PI); ctx.fill();
-
-      // Realistic Wood Grain Ruler
-      ctx.fillStyle = '#b45309'; ctx.fillRect(182, 70, 12, 120);
-      ctx.fillStyle = '#78350f'; 
-      for(let y=75; y<190; y+=10) { ctx.fillRect(182, y, 6, 2); }
-
-      return canvas;
-    }
-
-    function createWallTexture(baseColor = '#fef08a', trimColor = '#1d4ed8') {
-      const canvas = document.createElement('canvas');
-      canvas.width = 512; canvas.height = 512;
-      const ctx = canvas.getContext('2d');
-      
-      // Base Wall Paint Texture
-      ctx.fillStyle = baseColor;
-      ctx.fillRect(0, 0, 512, 512);
-
-      // Brick pattern overlays
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
-      ctx.lineWidth = 3;
-      const rowHeight = 32;
-      const brickWidth = 64;
-      for (let y = 0; y < 512; y += rowHeight) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke();
-        const offset = (y / rowHeight) % 2 === 0 ? 0 : brickWidth / 2;
-        for (let x = offset; x < 512; x += brickWidth) {
-          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + rowHeight); ctx.stroke();
-        }
-      }
-
-      // Baseboard Trim & Top Molding
-      ctx.fillStyle = trimColor;
-      ctx.fillRect(0, 0, 512, 40);
-      ctx.fillRect(0, 460, 512, 52);
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-      ctx.fillRect(0, 36, 512, 4);
-      ctx.fillRect(0, 460, 512, 6);
-
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.anisotropy = 8;
-      return texture;
-    }
-
-    function createRealisticFloorTexture() {
-      const canvas = document.createElement('canvas');
-      canvas.width = 512; canvas.height = 512;
-      const ctx = canvas.getContext('2d');
-
-      // Linoleum Tile Floor Grid
-      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, 0, 512, 512);
-      ctx.fillStyle = '#cbd5e1';
-      for (let i = 0; i < 512; i += 128) {
-        for (let j = 0; j < 512; j += 128) {
-          if ((i + j) % 256 === 0) ctx.fillRect(i, j, 128, 128);
-        }
-      }
-
-      // Tile Grout & Dirt Spots
-      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 4;
-      for (let k = 0; k <= 512; k += 128) {
-        ctx.beginPath(); ctx.moveTo(k, 0); ctx.lineTo(k, 512); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, k); ctx.lineTo(512, k); ctx.stroke();
-      }
-
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(12, 12);
-      return texture;
-    }
-
-    function createRealisticCeilingTexture() {
-      const canvas = document.createElement('canvas');
-      canvas.width = 256; canvas.height = 256;
-      const ctx = canvas.getContext('2d');
-
-      // Acoustic Ceiling Tile
-      ctx.fillStyle = '#f1f5f9'; ctx.fillRect(0, 0, 256, 256);
-      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 6; ctx.strokeRect(0, 0, 256, 256);
-
-      // Noise speckles on tile
-      ctx.fillStyle = '#cbd5e1';
-      for(let i = 0; i < 300; i++) {
-        ctx.fillRect(Math.random() * 256, Math.random() * 256, 2, 2);
-      }
-
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(12, 12);
-      return texture;
-    }
-
-    function createSpriteTexture(type) {
-      const c = document.createElement('canvas'); c.width = 128; c.height = 128;
-      const ctx = c.getContext('2d');
-      if (type === 'rushton') {
-        return new THREE.CanvasTexture(createRushtonCanvas(256, 256));
-      } else if (type === 'zyker') {
-        ctx.fillStyle = '#dc2626'; ctx.fillRect(32, 48, 64, 60);
-        ctx.fillStyle = '#fef08a'; ctx.fillRect(36, 10, 56, 24);
-        ctx.fillStyle = '#fff0f0'; ctx.fillRect(40, 30, 48, 22);
-      } else if (type === 'nono') {
-        ctx.fillStyle = '#78716c'; ctx.fillRect(32, 50, 64, 58);
-        ctx.fillStyle = '#f5d0fe'; ctx.fillRect(36, 12, 56, 24);
-        ctx.fillStyle = '#78350f'; ctx.fillRect(16, 60, 8, 60);
-      } else if (type === 'kiki') {
-        ctx.fillStyle = '#db2777'; ctx.fillRect(32, 48, 64, 60);
-        ctx.fillStyle = '#451a03'; ctx.fillRect(32, 10, 64, 50);
-        ctx.fillStyle = '#fbcfe8'; ctx.fillRect(42, 26, 44, 26);
-      } else if (type === 'myles') {
-        ctx.fillStyle = '#0f172a'; ctx.fillRect(28, 48, 72, 60);
-        ctx.fillStyle = '#78350f'; ctx.fillRect(36, 8, 56, 26);
-        ctx.fillStyle = '#000'; ctx.fillRect(36, 34, 56, 12);
-      } else if (type === 'tom') {
-        // Tom sprite wearing a blue shirt
-        ctx.fillStyle = '#0284c7'; ctx.fillRect(32, 48, 64, 60);
-        ctx.fillStyle = '#fed7aa'; ctx.fillRect(38, 14, 52, 34);
-        ctx.fillStyle = '#451a03'; ctx.fillRect(38, 8, 52, 14); // Dark hair
-        // Chocolate bar in hand
-        ctx.fillStyle = '#78350f'; ctx.fillRect(72, 62, 24, 30); // Chocolate
-        ctx.fillStyle = '#dc2626'; ctx.fillRect(72, 76, 24, 16); // Wrapper
-      } else if (type === 'notebook') {
-        // Red Notebook Cover
-        ctx.fillStyle = '#dc2626';
-        ctx.fillRect(24, 12, 88, 104);
-        ctx.fillStyle = '#b91c1c';
-        ctx.fillRect(24, 12, 10, 104);
-
-        // Silver/White Spiral Rings on Left
-        ctx.fillStyle = '#e2e8f0';
-        for (let y = 20; y <= 108; y += 12) {
-          ctx.beginPath();
-          ctx.arc(20, y, 5, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        // Classic Yellow Star Accent
-        ctx.fillStyle = '#facc15';
-        ctx.beginPath();
-        ctx.arc(68, 44, 14, 0, Math.PI * 2);
-        ctx.fill();
-
-        // White Label Box with MATH
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(40, 68, 56, 32);
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(40, 68, 56, 32);
-
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 16px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('MATH', 68, 90);
-      } else if (type === 'coin') {
-        ctx.fillStyle = '#eab308'; ctx.beginPath(); ctx.arc(64, 64, 48, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#fff'; ctx.font = 'bold 50px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🪙', 64, 82);
-      } else if (type === 'propel') {
-        ctx.fillStyle = '#2563eb'; ctx.beginPath(); ctx.arc(64, 64, 48, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#fff'; ctx.font = 'bold 50px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('⚡', 64, 82);
-      }
-      return new THREE.CanvasTexture(c);
-    }
-
-    function createCafeteriaTableTexture() {
-      const canvas = document.createElement('canvas');
-      canvas.width = 256; canvas.height = 256;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#991b1b'; ctx.fillRect(0, 0, 256, 256);
-      ctx.strokeStyle = '#450a0a'; ctx.lineWidth = 12; ctx.strokeRect(6, 6, 244, 244);
-      ctx.fillStyle = '#1e293b'; ctx.fillRect(32, 32, 192, 192);
-      return new THREE.CanvasTexture(canvas);
-    }
-
-    function createVendingMachineTexture() {
-      const canvas = document.createElement('canvas');
-      canvas.width = 128; canvas.height = 256;
-      const ctx = canvas.getContext('2d');
-      // Machine body
-      ctx.fillStyle = '#1e3a8a'; ctx.fillRect(0, 0, 128, 256);
-      ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 8; ctx.strokeRect(4, 4, 120, 248);
-      // Display window with Propel bottles
-      ctx.fillStyle = '#60a5fa'; ctx.fillRect(16, 20, 96, 120);
-      ctx.fillStyle = '#2563eb';
-      ctx.fillRect(28, 35, 20, 40); ctx.fillRect(54, 35, 20, 40); ctx.fillRect(80, 35, 20, 40);
-      ctx.fillRect(28, 85, 20, 40); ctx.fillRect(54, 85, 20, 40); ctx.fillRect(80, 85, 20, 40);
-      // Banner & Price
-      ctx.fillStyle = '#facc15'; ctx.fillRect(16, 148, 96, 28);
-      ctx.fillStyle = '#000'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText('PROPEL 1🪙', 64, 168);
-      // Coin slot & dispense tray
-      ctx.fillStyle = '#0f172a'; ctx.fillRect(80, 185, 28, 12);
-      ctx.fillStyle = '#000000'; ctx.fillRect(16, 205, 96, 35);
-      return new THREE.CanvasTexture(canvas);
-    }
-
-    /* =========================================================================
-       GAME CORE ENGINE & MAP DEFINITION
-       ========================================================================= */
-    const GAME = {
-      isStarted: false,
-      notebooksCollected: 0,
-      totalNotebooks: 7,
-      inventory: [null, null, null],
-      stamina: 100,
-      coins: 0,
-      rushtonSpeed: 0.05, // Increased base speed so Mr. Rushton chases much faster
-      terminalActive: false,
-      currentNotebookObj: null,
-      questionIndex: 0,
-      q1: 0, q2: 0,
-      player: { x: 10, z: 10, radius: 1.8 }
-    };
-
-    // 24x24 Schoolhouse Map Grid
-    // 0 = Wide Hallway, 1 = Wall, 2 = Classroom, 3 = Player Spawn, 4 = Exit, 5 = Cafeteria Floor
-    const MAP_SIZE = 24;
-    const CELL_SIZE = 4;
-    const mapGrid = [
-      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-      [1,2,2,2,2,1,0,0,0,0,3,0,0,0,0,1,5,5,5,5,5,5,5,1],
-      [1,2,2,2,2,1,0,0,0,0,0,0,0,0,0,1,5,5,5,5,5,5,5,1],
-      [1,2,2,2,2,1,0,0,0,0,0,0,0,0,0,0,5,5,5,5,5,5,5,1],
-      [1,2,2,2,2,1,0,0,0,0,0,0,0,0,0,0,5,5,5,5,5,5,5,1],
-      [1,1,0,0,1,1,0,0,0,0,0,0,0,0,0,1,5,5,5,5,5,5,5,1],
-      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,1,1,1,1],
-      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,1],
-      [1,2,2,0,0,2,2,1,0,0,1,2,2,0,0,2,2,1,0,0,2,2,2,1],
-      [1,2,2,0,0,2,2,1,0,0,1,2,2,0,0,2,2,1,0,0,2,2,2,1],
-      [1,2,2,0,0,2,2,1,0,0,1,2,2,0,0,2,2,1,0,0,2,2,2,1],
-      [1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,1],
-      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,1],
-      [1,2,2,0,0,2,2,1,0,0,2,2,2,0,0,1,2,2,0,0,2,2,2,1],
-      [1,2,2,0,0,2,2,1,0,0,2,2,2,0,0,1,2,2,0,0,2,2,2,1],
-      [1,2,2,0,0,2,2,1,0,0,2,2,2,0,0,1,2,2,0,0,2,2,2,1],
-      [1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,1],
-      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-    ];
-
-    let scene, camera, renderer, flashlight;
-    let yaw = 0, pitch = 0;
-    const keys = {};
-    const interactiveObjects = [];
-    const characters = [];
-
-    function buildSchoolMap() {
-      const wallGeo = new THREE.BoxGeometry(CELL_SIZE, 3.6, CELL_SIZE);
-      
-      // Upgrade materials to Standard Materials for realistic lighting & shadows
-      const hallwayWallMat = new THREE.MeshStandardMaterial({ map: createWallTexture('#fef08a', '#2563eb'), roughness: 0.6, metalness: 0.1 });
-      const classWallMat = new THREE.MeshStandardMaterial({ map: createWallTexture('#bae6fd', '#0284c7'), roughness: 0.6, metalness: 0.1 });
-      const cafeteriaWallMat = new THREE.MeshStandardMaterial({ map: createWallTexture('#fca5a5', '#dc2626'), roughness: 0.5, metalness: 0.2 });
-      const exitDoorMat = new THREE.MeshStandardMaterial({ map: createWallTexture('#ef4444', '#15803d'), roughness: 0.4, metalness: 0.3 });
-
-      // Realistic Floor Plane
-      const floorGeo = new THREE.PlaneGeometry(MAP_SIZE * CELL_SIZE, MAP_SIZE * CELL_SIZE);
-      const floorMat = new THREE.MeshStandardMaterial({ map: createRealisticFloorTexture(), roughness: 0.3, metalness: 0.1 });
-      const floorMesh = new THREE.Mesh(floorGeo, floorMat);
-      floorMesh.rotation.x = -Math.PI / 2;
-      floorMesh.position.set((MAP_SIZE * CELL_SIZE)/2 - CELL_SIZE/2, 0, (MAP_SIZE * CELL_SIZE)/2 - CELL_SIZE/2);
-      scene.add(floorMesh);
-
-      // Realistic Ceiling Plane
-      const ceilGeo = new THREE.PlaneGeometry(MAP_SIZE * CELL_SIZE, MAP_SIZE * CELL_SIZE);
-      const ceilMat = new THREE.MeshStandardMaterial({ map: createRealisticCeilingTexture(), roughness: 0.9, metalness: 0.0 });
-      const ceilMesh = new THREE.Mesh(ceilGeo, ceilMat);
-      ceilMesh.rotation.x = Math.PI / 2;
-      ceilMesh.position.set((MAP_SIZE * CELL_SIZE)/2 - CELL_SIZE/2, 3.6, (MAP_SIZE * CELL_SIZE)/2 - CELL_SIZE/2);
-      scene.add(ceilMesh);
-
-      // Build wall boxes for all grid tiles marked as walls or doors
-      for (let r = 0; r < MAP_SIZE; r++) {
-        for (let c = 0; c < MAP_SIZE; c++) {
-          const tile = mapGrid[r][c];
-          const posX = c * CELL_SIZE;
-          const posZ = r * CELL_SIZE;
-
-          if (tile === 1) {
-            const isCafeteria = (r > 0 && mapGrid[r-1][c] === 5) || (r < MAP_SIZE-1 && mapGrid[r+1][c] === 5) ||
-                                (c > 0 && mapGrid[r][c-1] === 5) || (c < MAP_SIZE-1 && mapGrid[r][c+1] === 5);
-            const isClass = (r > 0 && mapGrid[r-1][c] === 2) || (r < MAP_SIZE-1 && mapGrid[r+1][c] === 2) ||
-                            (c > 0 && mapGrid[r][c-1] === 2) || (c < MAP_SIZE-1 && mapGrid[r][c+1] === 2);
-            
-            const wallMat = isCafeteria ? cafeteriaWallMat : (isClass ? classWallMat : hallwayWallMat);
-            const wall = new THREE.Mesh(wallGeo, wallMat);
-            wall.position.set(posX, 1.8, posZ);
-            scene.add(wall);
-          } else if (tile === 4) {
-            const door = new THREE.Mesh(wallGeo, exitDoorMat);
-            door.position.set(posX, 1.8, posZ);
-            scene.add(door);
-          } else if (tile === 3) {
-            GAME.player = { x: posX, z: posZ, radius: 1.8 };
-            camera.position.set(posX, 1.6, posZ);
-          } else if (tile === 5) {
-            if (r % 2 === 0 && c % 2 === 0) {
-              const tableGeo = new THREE.BoxGeometry(2.4, 1.0, 1.4);
-              const tableMat = new THREE.MeshStandardMaterial({ map: createCafeteriaTableTexture(), roughness: 0.4 });
-              const table = new THREE.Mesh(tableGeo, tableMat);
-              table.position.set(posX, 0.5, posZ);
-              scene.add(table);
-            }
-          }
-
-          // Overhead Realistic Fluorescent Light Fixtures
-          if ((tile === 0 || tile === 5) && (r % 3 === 0) && (c % 3 === 0)) {
-            const lightColor = tile === 5 ? 0xffedd5 : 0xf8fafc;
-            const light = new THREE.PointLight(lightColor, 1.2, 16);
-            light.position.set(posX, 3.2, posZ);
-            scene.add(light);
-          }
-        }
-      }
-    }
-
-    function spawnEntities() {
-      // Clear interactive objects
-      interactiveObjects.length = 0;
-      characters.length = 0;
-
-      // Spawn 7 Notebooks (including one in the Cafeteria)
-      const notebookLocations = [
-        { r: 2, c: 2 }, { r: 3, c: 18 }, { r: 11, c: 2 },
-        { r: 11, c: 12 }, { r: 18, c: 2 }, { r: 18, c: 11 }, { r: 18, c: 21 }
-      ];
-
-      const notebookMat = new THREE.SpriteMaterial({ map: createSpriteTexture('notebook') });
-      notebookLocations.forEach((loc) => {
-        const sprite = new THREE.Sprite(notebookMat);
-        sprite.scale.set(1.4, 1.4, 1);
-        sprite.position.set(loc.c * CELL_SIZE, 1.4, loc.r * CELL_SIZE);
-        sprite.userData = { type: 'notebook' };
-        scene.add(sprite);
-        interactiveObjects.push(sprite);
-      });
-
-      // Spawn Coins and Items across Cafeteria & Hallways
-      const coinMat = new THREE.SpriteMaterial({ map: createSpriteTexture('coin') });
-      const propelMat = new THREE.SpriteMaterial({ map: createSpriteTexture('propel') });
-
-      const itemSpawns = [
-        { r: 2, c: 19, type: 'coin' }, { r: 4, c: 21, type: 'propel' }, { r: 7, c: 8, type: 'coin' },
-        { r: 14, c: 10, type: 'coin' }, { r: 21, c: 4, type: 'propel' }, { r: 21, c: 18, type: 'coin' }
-      ];
-
-      itemSpawns.forEach((loc) => {
-        const mat = loc.type === 'coin' ? coinMat : propelMat;
-        const sprite = new THREE.Sprite(mat);
-        sprite.scale.set(1.2, 1.2, 1);
-        sprite.position.set(loc.c * CELL_SIZE, 1.0, loc.r * CELL_SIZE);
-        sprite.userData = { type: loc.type };
-        scene.add(sprite);
-        interactiveObjects.push(sprite);
-      });
-
-      // Spawn Vending Machines (in Cafeteria and Main Hallway)
-      const vendingTex = createVendingMachineTexture();
-      const vendingMat = new THREE.MeshStandardMaterial({ map: vendingTex, roughness: 0.3 });
-      const vendingGeo = new THREE.BoxGeometry(1.6, 2.8, 1.0);
-
-      const vendingSpawns = [
-        { r: 1, c: 16, rot: 0 },   // Cafeteria Entrance
-        { r: 6, c: 11, rot: Math.PI / 2 },  // Main Hallway Intersection
-        { r: 14, c: 1, rot: -Math.PI / 2 }  // West Hallway Corridor
-      ];
-
-      vendingSpawns.forEach(loc => {
-        const machine = new THREE.Mesh(vendingGeo, vendingMat);
-        machine.position.set(loc.c * CELL_SIZE, 1.4, loc.r * CELL_SIZE);
-        machine.rotation.y = loc.rot;
-        machine.userData = { type: 'vending' };
-        scene.add(machine);
-        interactiveObjects.push(machine);
-      });
-
-      // Spawn Antagonists and Hallway Characters
-      const rushtonSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: createSpriteTexture('rushton') }));
-      rushtonSprite.scale.set(2.4, 2.4, 1);
-      rushtonSprite.position.set(14 * CELL_SIZE, 1.4, 14 * CELL_SIZE);
-      rushtonSprite.userData = { type: 'rushton' };
-      scene.add(rushtonSprite);
-      characters.push(rushtonSprite);
-
-      const charTypes = [
-        { name: 'zyker', r: 1, c: 6 },
-        { name: 'nono', r: 2, c: 17 }, // Hangs out near the Cafeteria
-        { name: 'kiki', r: 14, c: 18 },
-        { name: 'myles', r: 21, c: 10 },
-        { name: 'tom', r: 3, c: 20 }   // Tom enjoying chocolate in the cafeteria
-      ];
-
-      charTypes.forEach(c => {
-        const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: createSpriteTexture(c.name) }));
-        spr.scale.set(2.2, 2.2, 1);
-        spr.position.set(c.c * CELL_SIZE, 1.3, c.r * CELL_SIZE);
-        spr.userData = { type: c.name };
-        scene.add(spr);
-        characters.push(spr);
-        interactiveObjects.push(spr); // Allow clicking or pressing [E] to talk
-      });
-
-      // Render Mr. Rushton avatar for terminal dialogs
-      const avatarCanvas = document.getElementById('rushton-avatar');
-      if (avatarCanvas) {
-        avatarCanvas.getContext('2d').drawImage(createRushtonCanvas(256, 256), 0, 0, 64, 64);
-      }
-    }
-
-    /* =========================================================================
-       INITIALIZATION & CONTROLS
-       ========================================================================= */
-    function init() {
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x020617);
-      scene.fog = new THREE.FogExp2(0x020617, 0.03);
-
-      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
-      camera.rotation.order = 'YXZ';
-
-      renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.1;
-      document.getElementById('game-container').appendChild(renderer.domElement);
-
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
-      scene.add(ambientLight);
-
-      // Realistic Focused Flashlight
-      flashlight = new THREE.SpotLight(0xfffbeb, 3.5, 25, Math.PI / 6, 0.4, 1.2);
-      camera.add(flashlight);
-      camera.add(flashlight.target);
-      flashlight.target.position.set(0, 0, -1);
-      scene.add(camera);
-
-      buildSchoolMap();
-      spawnEntities();
-      setupEventListeners();
-      animate();
-    }
-
-    function setupEventListeners() {
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-
-      document.addEventListener('keydown', (e) => {
-        keys[e.code] = true;
-        if (e.code === 'KeyF' && flashlight) flashlight.visible = !flashlight.visible;
-        if (e.code === 'KeyE') checkInteractions();
-        if (e.code === 'Space') usePropel();
-      });
-
-      document.addEventListener('keyup', (e) => { keys[e.code] = false; });
-
-      const container = document.getElementById('game-container');
-      container.addEventListener('click', () => {
-        if (GAME.isStarted && !GAME.terminalActive) {
-          container.requestPointerLock();
-          checkInteractions();
-        }
-      });
-
-      document.addEventListener('mousemove', (e) => {
-        if (!GAME.isStarted || GAME.terminalActive || document.pointerLockElement !== container) return;
-        yaw -= e.movementX * 0.0025;
-        pitch -= e.movementY * 0.0025;
-        pitch = Math.max(-1.4, Math.min(1.4, pitch));
-        camera.rotation.y = yaw;
-        camera.rotation.x = pitch;
-      });
-
-      // UI Buttons
-      document.getElementById('start-btn').addEventListener('click', startGame);
-      document.getElementById('restart-btn').addEventListener('click', resetGame);
-      document.getElementById('victory-restart-btn').addEventListener('click', resetGame);
-      document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
-      document.getElementById('char-dialogue-close').addEventListener('click', () => {
-        document.getElementById('char-dialogue-modal').classList.add('hidden');
-        GAME.terminalActive = false;
-        if (document.getElementById('game-container').requestPointerLock) {
-          document.getElementById('game-container').requestPointerLock();
-        }
-      });
-
-      document.getElementById('math-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        submitMathAnswer();
-      });
-    }
-
-    function toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      } else if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
-    }
-
-    function startGame() {
-      audio.init();
-      GAME.isStarted = true;
-      document.getElementById('start-screen').classList.add('hidden');
-      document.getElementById('hud').classList.remove('hidden');
-      document.getElementById('game-container').requestPointerLock();
-    }
-
-    function showMessage(msg) {
-      const el = document.getElementById('game-msg');
-      el.innerText = msg;
-      el.style.opacity = '1';
-      setTimeout(() => { el.style.opacity = '0'; }, 2500);
-    }
-
-    /* =========================================================================
-       INTERACTION & ITEM LOGIC
-       ========================================================================= */
-    function checkInteractions() {
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-      const intersects = raycaster.intersectObjects(interactiveObjects);
-
-      if (intersects.length > 0 && intersects[0].distance < 3.8) {
-        const obj = intersects[0].object;
-        const type = obj.userData.type;
-
-        if (type === 'notebook') {
-          openMathTerminal(obj);
-        } else if (type === 'coin') {
-          GAME.coins++;
-          document.getElementById('coin-count').innerText = GAME.coins;
-          audio.playChime(true);
-          scene.remove(obj);
-          interactiveObjects.splice(interactiveObjects.indexOf(obj), 1);
-          showMessage("+1 Coin Collected!");
-        } else if (type === 'propel') {
-          addInventory('Propel');
-          scene.remove(obj);
-          interactiveObjects.splice(interactiveObjects.indexOf(obj), 1);
-        } else if (type === 'vending') {
-          if (GAME.coins >= 1) {
-            GAME.coins--;
-            document.getElementById('coin-count').innerText = GAME.coins;
-            addInventory('Propel');
-            audio.playBsoda();
-            showMessage("Bought Propel drink for 1 Coin!");
-          } else {
-            audio.playChime(false);
-            showMessage("Need 1 Coin to buy Propel!");
-          }
-        } else if (['zyker', 'nono', 'kiki', 'myles', 'tom'].includes(type)) {
-          interactWithCharacter(type);
-        }
-      }
-    }
-
-    function interactWithCharacter(type) {
-      GAME.terminalActive = true;
-      if (document.exitPointerLock) document.exitPointerLock();
-
-      const modal = document.getElementById('char-dialogue-modal');
-      const nameEl = document.getElementById('char-name');
-      const textEl = document.getElementById('char-text');
-
-      if (type === 'zyker') {
-        nameEl.innerText = "Zyker (Blonde Hair)";
-        textEl.innerText = '"Hey! I saw Mr. Rushton patrolling by classroom 3. Watch out for his wooden ruler!"';
-        audio.playChime(true);
-      } else if (type === 'nono') {
-        nameEl.innerText = "Nono (Elderly Hallway Monitor)";
-        textEl.innerText = '"Back in my day we had 10 notebooks! Here, take some extra stamina kid!"';
-        GAME.stamina = 100;
-        audio.playChime(true);
-      } else if (type === 'kiki') {
-        nameEl.innerText = "Kiki (Brown Hair)";
-        textEl.innerText = '"Nobody likes me... but don\'t get caught by Mr. Rushton or you\'ll get a Red Sheet!"';
-        audio.playChime(false);
-      } else if (type === 'myles') {
-        nameEl.innerText = "Myles Ori (Coolest Guy in School)";
-        textEl.innerText = '"Stay cool! Here\'s a quarter for the Propel vending machine!"';
-        GAME.coins += 1;
-        document.getElementById('coin-count').innerText = GAME.coins;
-        audio.playChime(true);
-      } else if (type === 'tom') {
-        nameEl.innerText = "Tom";
-        textEl.innerText = '"Mmm... chocolate! Eating sweets gives me so much energy! Keep up the stamina!"';
-        GAME.stamina = Math.min(100, GAME.stamina + 50);
-        audio.playChime(true);
-      }
-
-      modal.classList.remove('hidden');
-    }
-
-    function addInventory(item) {
-      for (let i = 0; i < 3; i++) {
-        if (!GAME.inventory[i]) {
-          GAME.inventory[i] = item;
-          document.getElementById(`item-${i}`).innerText = '⚡';
-          audio.playChime(true);
-          showMessage("Picked up Propel drink!");
-          return;
-        }
-      }
-      showMessage("Inventory Full!");
-    }
-
-    function usePropel() {
-      const index = GAME.inventory.indexOf('Propel');
-      if (index !== -1) {
-        GAME.inventory[index] = null;
-        document.getElementById(`item-${index}`).innerText = '';
-        GAME.stamina = 100;
-        audio.playBsoda();
-        showMessage("Drank Propel! Stamina Restored!");
-      }
-    }
-
-    /* =========================================================================
-       MATH TERMINAL LOGIC & SECRET CODE 67
-       ========================================================================= */
-    function openMathTerminal(obj) {
-      GAME.terminalActive = true;
-      GAME.currentNotebookObj = obj;
-      GAME.questionIndex = 0;
-      if (document.exitPointerLock) document.exitPointerLock();
-      document.getElementById('math-terminal').classList.remove('hidden');
-      nextMathQuestion();
-    }
-
-    function nextMathQuestion() {
-      const input = document.getElementById('math-input');
-      input.value = '';
-      input.focus();
-      GAME.q1 = Math.floor(Math.random() * 10);
-      GAME.q2 = Math.floor(Math.random() * 10);
-      document.getElementById('question-number').innerText = `QUESTION ${GAME.questionIndex + 1} OF 3`;
-      document.getElementById('question-text').innerText = `${GAME.q1} + ${GAME.q2} = ?`;
-    }
-
-    function submitMathAnswer() {
-      const val = document.getElementById('math-input').value.trim();
-      
-      // Secret Code 67 Trigger
-      if (val === '67') {
-        document.getElementById('math-terminal').classList.add('hidden');
-        GAME.terminalActive = false;
-        triggerRedSheet("Entered Secret Code 67!");
-        return;
-      }
-
-      const isCorrect = parseInt(val) === (GAME.q1 + GAME.q2);
-      audio.playChime(isCorrect);
-
-      if (!isCorrect) {
-        GAME.rushtonSpeed += 0.025; // Speed increases even faster on incorrect answers
-        showMessage("Wrong answer! Mr. Rushton is speeding up!");
-      }
-
-      GAME.questionIndex++;
-      if (GAME.questionIndex >= 3) {
-        document.getElementById('math-terminal').classList.add('hidden');
-        GAME.terminalActive = false;
-        if (document.getElementById('game-container').requestPointerLock) {
-          document.getElementById('game-container').requestPointerLock();
-        }
-
-        if (GAME.currentNotebookObj) {
-          scene.remove(GAME.currentNotebookObj);
-          interactiveObjects.splice(interactiveObjects.indexOf(GAME.currentNotebookObj), 1);
-          GAME.notebooksCollected++;
-          document.getElementById('notebook-count').innerText = `${GAME.notebooksCollected}/${GAME.totalNotebooks}`;
-          showMessage(`Collected Notebook ${GAME.notebooksCollected}/7!`);
-
-          if (GAME.notebooksCollected >= GAME.totalNotebooks) {
-            document.getElementById('victory-modal').classList.remove('hidden');
-            if (document.exitPointerLock) document.exitPointerLock();
-          }
-        }
-      } else {
-        nextMathQuestion();
-      }
-    }
-
-    /* =========================================================================
-       DETENTION & GAME OVER
-       ========================================================================= */
-    function triggerRedSheet(reason) {
-      audio.playJumpScare();
-      document.getElementById('detention-reason').innerText = reason;
-      document.getElementById('red-sheet-modal').classList.remove('hidden');
-      if (document.exitPointerLock) document.exitPointerLock();
-      GAME.isStarted = false;
-    }
-
-    function resetGame() {
-      location.reload();
-    }
-
-    /* =========================================================================
-       GAME LOOP & MOVEMENT
-       ========================================================================= */
-    function animate() {
-      requestAnimationFrame(animate);
-
-      if (GAME.isStarted && !GAME.terminalActive) {
-        // Boosted player movement and sprinting speeds
-        const moveSpeed = (keys['ShiftLeft'] || keys['ShiftRight']) && GAME.stamina > 0 ? 0.16 : 0.095;
+    <div id="game-message" class="absolute top-24 left-1/2 -translate-x-1/2 bg-yellow-400 text-black font-pixel text-xs sm:text-sm px-6 py-3 rounded-lg shadow-2xl border-4 border-black hidden transition-opacity z-30">
+        Message Here
+    </div>
+
+    <!-- START SCREEN -->
+    <div id="start-screen" class="absolute inset-0 bg-blue-700/95 flex flex-col items-center justify-center p-6 text-center z-40 text-white">
+        <h1 class="font-pixel text-yellow-300 text-2xl sm:text-4xl md:text-5xl mb-2 leading-tight">
+            MR. RUSHTON'S BASICS<br><span class="text-white text-base sm:text-2xl">IN EDUCATION AND LEARNING 3D</span>
+        </h1>
         
-        if ((keys['ShiftLeft'] || keys['ShiftRight']) && GAME.stamina > 0) {
-          GAME.stamina = Math.max(0, GAME.stamina - 0.3);
-        } else if (GAME.stamina < 100) {
-          GAME.stamina = Math.min(100, GAME.stamina + 0.15);
+        <h2 class="text-yellow-200 font-pixel text-xs sm:text-sm mb-6 tracking-wide">
+            Created by Arturo, Featuring Zyker & Myles
+        </h2>
+
+        <div class="w-28 h-28 bg-yellow-300 border-4 border-black rounded-full flex items-center justify-center mb-6 text-6xl shadow-inner">👨‍🏫</div>
+
+        <p class="text-lg sm:text-2xl max-w-xl text-yellow-100 mb-6 leading-relaxed">
+            Collect all <span class="text-yellow-300 font-bold">7 Notebooks</span> and open <span class="text-yellow-300 font-bold">BOTH Exit Doors</span> to escape!
+            <br><span class="text-red-300 font-bold text-base sm:text-lg">Zyker guards the west hall, Myles trades Chess Boards, and Mr. Rushton is hunting!</span>
+        </p>
+
+        <button id="start-btn" onclick="startGame()" class="font-pixel bg-red-600 hover:bg-red-500 text-white border-4 border-black px-8 py-4 text-base sm:text-xl rounded-lg shadow-2xl transform hover:scale-105 transition-all cursor-pointer">
+            CLICK TO START GAME
+        </button>
+
+        <div class="mt-8 grid grid-cols-2 gap-4 text-xs sm:text-sm text-yellow-100 bg-blue-900/90 p-4 rounded-lg border-2 border-yellow-400">
+            <div><span class="text-yellow-300 font-bold">W / S:</span> Move Up / Down</div>
+            <div><span class="text-yellow-300 font-bold">A / D:</span> Move Left / Right</div>
+            <div><span class="text-yellow-300 font-bold">MOUSE:</span> Look Around</div>
+            <div><span class="text-yellow-300 font-bold">SHIFT / E:</span> Sprint / Interact</div>
+        </div>
+    </div>
+
+    <!-- MATH QUIZ MODAL -->
+    <div id="quiz-modal" class="absolute inset-0 bg-black/85 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-blue-100 border-8 border-red-600 rounded-xl p-6 w-full max-w-md text-black shadow-2xl relative">
+            <div class="bg-blue-700 text-white font-pixel text-xs p-2 rounded mb-4 flex justify-between items-center border-2 border-black">
+                <span>RUSHTON-PAD 3D</span>
+                <span id="quiz-progress" class="text-yellow-300">PROBLEM 1/3</span>
+            </div>
+            <div class="bg-white border-4 border-black p-6 rounded mb-4 text-center min-h-[100px] flex items-center justify-center">
+                <p id="quiz-question" class="text-2xl sm:text-3xl font-bold font-mono text-gray-900">5 + 3 = ?</p>
+            </div>
+            <div id="quiz-options" class="grid grid-cols-1 gap-3 mb-4"></div>
+            <div id="quiz-feedback" class="h-6 text-center font-bold text-sm font-pixel"></div>
+        </div>
+    </div>
+
+    <!-- ZYKER TOLL MODAL -->
+    <div id="zyker-modal" class="absolute inset-0 bg-black/85 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-blue-900 border-8 border-yellow-400 rounded-xl p-6 w-full max-w-md text-white shadow-2xl relative">
+            <div class="bg-red-700 text-white font-pixel text-xs p-2 rounded mb-4 flex justify-between items-center border-2 border-black">
+                <span>ZYKER THE TOLL-TAKER</span>
+                <span>CHOOSE ITEM</span>
+            </div>
+            <div class="bg-blue-950 border-4 border-black p-4 rounded mb-4 text-center">
+                <p class="text-lg font-bold font-mono text-yellow-300">"Give me an item or you're stuck here!"</p>
+            </div>
+            <div id="zyker-item-options" class="grid grid-cols-1 gap-3 mb-4"></div>
+            <button onclick="closeZykerModal()" class="w-full bg-red-600 hover:bg-red-500 text-white font-pixel text-xs py-2 rounded border-2 border-black cursor-pointer">CANCEL</button>
+        </div>
+    </div>
+
+    <!-- GAME OVER / WIN SCREEN -->
+    <div id="end-screen" class="absolute inset-0 bg-red-950/95 flex flex-col items-center justify-center p-6 text-center z-50 hidden text-white">
+        <h1 id="end-title" class="font-pixel text-yellow-400 text-3xl sm:text-5xl mb-4 leading-tight">GAME OVER!</h1>
+        <p id="end-subtitle" class="text-xl sm:text-2xl text-white mb-6">Mr. Rushton caught you!</p>
+        <div id="end-icon" class="text-7xl mb-6">👨‍🏫📏</div>
+        <button onclick="resetGame()" class="font-pixel bg-yellow-400 hover:bg-yellow-300 text-black border-4 border-black px-8 py-4 text-lg rounded shadow-lg transform hover:scale-105 transition-all cursor-pointer">
+            TRY AGAIN
+        </button>
+    </div>
+
+    <script>
+        // --- AUDIO SYNTHESIZER ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
         }
 
-        document.getElementById('stamina-bar').style.width = `${GAME.stamina}%`;
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
 
-        const moveDir = new THREE.Vector3();
-        if (keys['KeyW']) moveDir.z -= 1;
-        if (keys['KeyS']) moveDir.z += 1;
-        if (keys['KeyA']) moveDir.x -= 1;
-        if (keys['KeyD']) moveDir.x += 1;
-
-        moveDir.normalize();
-        moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
-
-        const nextX = camera.position.x + moveDir.x * moveSpeed;
-        const nextZ = camera.position.z + moveDir.z * moveSpeed;
-
-        // Grid Collision Checks
-        const gridX = Math.floor((nextX + CELL_SIZE/2) / CELL_SIZE);
-        const gridZ = Math.floor((nextZ + CELL_SIZE/2) / CELL_SIZE);
-
-        if (gridZ >= 0 && gridZ < MAP_SIZE && gridX >= 0 && gridX < MAP_SIZE) {
-          if (mapGrid[gridZ][gridX] !== 1) {
-            camera.position.x = nextX;
-            camera.position.z = nextZ;
-          }
-        }
-
-        // Update Antagonist Movement (Mr. Rushton chases player)
-        characters.forEach(char => {
-          if (char.userData.type === 'rushton') {
-            const dir = new THREE.Vector3().subVectors(camera.position, char.position);
-            dir.y = 0;
-            const dist = dir.length();
-            if (dist < 1.8) {
-              triggerRedSheet("Caught by Mr. Rushton!");
-            } else {
-              dir.normalize();
-              char.position.addScaledVector(dir, GAME.rushtonSpeed);
+            if (type === 'pickup') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.08);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now); osc.stop(now + 0.25);
+            } else if (type === 'correct') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.setValueAtTime(880, now + 0.1);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(140, now);
+                osc.frequency.setValueAtTime(90, now + 0.15);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now); osc.stop(now + 0.4);
+            } else if (type === 'slap') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(700, now);
+                osc.frequency.exponentialRampToValueAtTime(60, now + 0.12);
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                osc.start(now); osc.stop(now + 0.12);
+            } else if (type === 'jumpscare') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.linearRampToValueAtTime(100, now + 0.8);
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+                osc.start(now); osc.stop(now + 0.8);
+            } else if (type === 'drink') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.25);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now); osc.stop(now + 0.25);
+            } else if (type === 'stun') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.setValueAtTime(400, now + 0.15);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now); osc.stop(now + 0.4);
+            } else if (type === 'bully') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.setValueAtTime(140, now + 0.2);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
             }
-          }
-        });
-      }
+        }
 
-      renderer.render(scene, camera);
-    }
+        // --- THREE.JS GLOBALS & NAVIGATOR ---
+        let scene, camera, renderer;
+        let isGameActive = false;
+        let isQuizActive = false;
+        let isZykerModalActive = false;
+        let exitsOpenedCount = 0;
+        const totalExits = 2;
 
-    window.onload = init;
-  </script>
+        const rushtonMiniMap = {
+            gridSizeX: 40,
+            gridSizeZ: 40,
+            cellSize: 4.5,
+            gridOriginX: -90,
+            gridOriginZ: -90,
+            nodes: [],
+            initMap() {
+                this.nodes = [];
+                for (let x = 0; x < this.gridSizeX; x++) {
+                    this.nodes[x] = [];
+                    for (let z = 0; z < this.gridSizeZ; z++) {
+                        const worldX = this.gridOriginX + x * this.cellSize + this.cellSize / 2;
+                        const worldZ = this.gridOriginZ + z * this.cellSize + this.cellSize / 2;
+                        const isWalkable = !checkCollision({ x: worldX, z: worldZ }, 0.6);
+                        this.nodes[x][z] = { walkable: isWalkable, x: worldX, z: worldZ };
+                    }
+                }
+            },
+            getBestNavDir(currentPos, targetPos) {
+                const distToTarget = currentPos.distanceTo(targetPos);
+                if (distToTarget < 12.0) {
+                    const direct = new THREE.Vector3().subVectors(targetPos, currentPos);
+                    direct.y = 0;
+                    if (direct.lengthSq() > 0.001) direct.normalize();
+                    return direct;
+                }
+
+                let curX = Math.floor((currentPos.x - this.gridOriginX) / this.cellSize);
+                let curZ = Math.floor((currentPos.z - this.gridOriginZ) / this.cellSize);
+                let tgtX = Math.floor((targetPos.x - this.gridOriginX) / this.cellSize);
+                let tgtZ = Math.floor((targetPos.z - this.gridOriginZ) / this.cellSize);
+
+                curX = Math.max(0, Math.min(this.gridSizeX - 1, curX));
+                curZ = Math.max(0, Math.min(this.gridSizeZ - 1, curZ));
+                tgtX = Math.max(0, Math.min(this.gridSizeX - 1, tgtX));
+                tgtZ = Math.max(0, Math.min(this.gridSizeZ - 1, tgtZ));
+
+                const dirs = [
+                    { x: 0, z: -1 }, { x: 0, z: 1 }, { x: -1, z: 0 }, { x: 1, z: 0 },
+                    { x: -1, z: -1 }, { x: 1, z: -1 }, { x: -1, z: 1 }, { x: 1, z: 1 }
+                ];
+
+                let bestNeighbor = null;
+                let minDist = Infinity;
+
+                for (let d of dirs) {
+                    let nx = curX + d.x;
+                    let nz = curZ + d.z;
+                    if (nx >= 0 && nx < this.gridSizeX && nz >= 0 && nz < this.gridSizeZ) {
+                        if (this.nodes[nx][nz].walkable) {
+                            let dist = Math.hypot(nx - tgtX, nz - tgtZ);
+                            if (dist < minDist) {
+                                minDist = dist;
+                                bestNeighbor = this.nodes[nx][nz];
+                            }
+                        }
+                    }
+                }
+
+                if (bestNeighbor) {
+                    const navTarget = new THREE.Vector3(bestNeighbor.x, 1.6, bestNeighbor.z);
+                    const dir = new THREE.Vector3().subVectors(navTarget, currentPos);
+                    dir.y = 0;
+                    if (dir.lengthSq() > 0.01) {
+                        dir.normalize();
+                        return dir;
+                    }
+                }
+
+                const direct = new THREE.Vector3().subVectors(targetPos, currentPos);
+                direct.y = 0;
+                direct.normalize();
+                return direct;
+            }
+        };
+
+        const player = {
+            position: new THREE.Vector3(0, 1.6, 75),
+            rotation: { yaw: 0, pitch: 0 },
+            stamina: 180,
+            maxStamina: 180,
+            inventory: [null, null, null],
+            notebooksCollected: 0,
+            radius: 0.6
+        };
+
+        const keyState = {};
+        let isPointerLocked = false;
+        const wallBoxes = [];
+        const interactiveObjects = [];
+        let rushtonSprite, nonoSprite, zykerSprite, mylesSprite, zykerBox;
+
+        const rushton = {
+            position: new THREE.Vector3(0, 1.6, -20),
+            baseSpeed: 0.052,
+            slapTimer: 0,
+            baseSlapInterval: 34,
+            angerLevel: 1.0,
+            radius: 0.9,
+            stunDurationTimer: 0,
+            lastPosition: new THREE.Vector3(0, 1.6, -20),
+            stuckCheckTimer: 0,
+            isAggro: false
+        };
+
+        const nono = {
+            position: new THREE.Vector3(-12, 1.8, 15),
+            homePosition: new THREE.Vector3(-12, 1.8, 15),
+            speed: 0.035,
+            radius: 0.9,
+            isChasingRushton: false,
+            lastPosition: new THREE.Vector3(-12, 1.8, 15),
+            stuckCheckTimer: 0
+        };
+
+        const zyker = {
+            position: new THREE.Vector3(-55, 1.8, 0),
+            active: true
+        };
+
+        const myles = {
+            position: new THREE.Vector3(-4, 1.8, -2),
+        };
+
+        // UNSTRETCHED BRICK TEXTURE GENERATOR
+        function getBrickMaterial(width, height) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#450a0a';
+            ctx.fillRect(0, 0, 256, 256);
+
+            const brickRows = 8;
+            const brickCols = 4;
+            const rH = 256 / brickRows;
+            const rW = 256 / brickCols;
+
+            ctx.fillStyle = '#b91c1c';
+            for (let r = 0; r < brickRows; r++) {
+                const offsetX = (r % 2 === 0) ? 0 : rW / 2;
+                for (let c = -1; c <= brickCols; c++) {
+                    const bx = c * rW + offsetX;
+                    const by = r * rH;
+                    ctx.fillRect(bx + 2, by + 2, rW - 4, rH - 4);
+
+                    ctx.fillStyle = '#dc2626';
+                    ctx.fillRect(bx + 3, by + 3, rW - 6, 3);
+                    ctx.fillStyle = '#991b1b';
+                    ctx.fillRect(bx + 3, by + rH - 5, rW - 6, 3);
+                    ctx.fillStyle = '#b91c1c';
+                }
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(Math.max(1, width / 4), 1);
+
+            return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8, metalness: 0.1 });
+        }
+
+        function init3D() {
+            const container = document.getElementById('game-container');
+            container.innerHTML = '';
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x93c5fd);
+            scene.fog = new THREE.FogExp2(0x93c5fd, 0.005);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.rotation.order = 'YXZ';
+            camera.position.copy(player.position);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xfffaed, 1.0);
+            dirLight.position.set(30, 80, 30);
+            scene.add(dirLight);
+
+            buildSchoolMap();
+            rushtonMiniMap.initMap();
+
+            createRushtonEnemy();
+            createNonoCharacter();
+            createZykerCharacter();
+            createMylesCharacter();
+
+            window.addEventListener('resize', onWindowResize);
+            setupControls();
+        }
+
+        function createRushtonSprite() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 384;
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, 256, 384);
+            
+            ctx.fillStyle = '#18181b';
+            ctx.fillRect(68, 160, 120, 220);
+
+            ctx.beginPath();
+            ctx.moveTo(96, 160); ctx.lineTo(128, 190); ctx.lineTo(160, 160);
+            ctx.fillStyle = '#27272a'; ctx.fill();
+
+            ctx.fillStyle = '#fce2d0';
+            ctx.beginPath(); ctx.ellipse(128, 90, 48, 54, 0, 0, Math.PI * 2); ctx.fill();
+
+            ctx.fillStyle = '#a55229';
+            for (let i = 0; i < 35; i++) {
+                const angle = (i / 35) * Math.PI * 1.3 + Math.PI * 0.85;
+                const rx = 128 + Math.cos(angle) * 46;
+                const ry = 72 + Math.sin(angle) * 42;
+                ctx.beginPath(); ctx.arc(rx, ry, 10 + (i % 3) * 2, 0, Math.PI * 2); ctx.fill();
+            }
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath(); ctx.ellipse(108, 84, 9, 7, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(148, 84, 9, 7, 0, 0, Math.PI * 2); ctx.fill();
+
+            ctx.fillStyle = '#2563eb';
+            ctx.beginPath(); ctx.arc(108, 84, 3.5, 0, Math.PI * 2); ctx.arc(148, 84, 3.5, 0, Math.PI * 2); ctx.fill();
+
+            ctx.fillStyle = '#9c4221';
+            ctx.beginPath();
+            ctx.moveTo(88, 92); ctx.lineTo(168, 92); ctx.lineTo(160, 142); ctx.lineTo(128, 154); ctx.lineTo(96, 142);
+            ctx.closePath(); ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath(); ctx.roundRect(110, 120, 36, 14, 4); ctx.fill();
+            
+            ctx.fillStyle = '#8e3815';
+            ctx.beginPath(); ctx.ellipse(128, 110, 22, 8, 0, 0, Math.PI * 2); ctx.fill();
+
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(170, 130, 14, 180);
+            ctx.fillStyle = '#111827';
+            for(let mark = 140; mark < 300; mark += 15) {
+                ctx.fillRect(170, mark, 6, 2);
+            }
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createRushtonEnemy() {
+            const texture = createRushtonSprite();
+            const spriteMat = new THREE.SpriteMaterial({ map: texture });
+            rushtonSprite = new THREE.Sprite(spriteMat);
+            rushtonSprite.scale.set(2.6, 3.8, 1);
+            rushtonSprite.position.copy(rushton.position);
+            scene.add(rushtonSprite);
+        }
+
+        function createNonoCharacter() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 384;
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, 256, 384);
+            ctx.fillStyle = '#2563eb';
+            ctx.fillRect(58, 150, 140, 230);
+
+            ctx.strokeStyle = '#facc15';
+            ctx.lineWidth = 3;
+            for (let x = 68; x <= 188; x += 14) {
+                ctx.beginPath(); ctx.moveTo(x, 150); ctx.lineTo(x, 380); ctx.stroke();
+            }
+
+            ctx.fillStyle = '#fcd5ce';
+            ctx.beginPath(); ctx.ellipse(128, 90, 46, 52, 0, 0, Math.PI * 2); ctx.fill();
+
+            ctx.fillStyle = '#dc2626';
+            ctx.beginPath(); ctx.ellipse(128, 52, 50, 28, 0, Math.PI, Math.PI * 2); ctx.fill();
+            ctx.fillRect(118, 48, 36, 8);
+
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath(); ctx.arc(108, 80, 4, 0, Math.PI * 2); ctx.arc(148, 80, 4, 0, Math.PI * 2); ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath(); ctx.ellipse(128, 114, 24, 14, 0, 0, Math.PI); ctx.fill();
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture });
+            nonoSprite = new THREE.Sprite(spriteMat);
+            nonoSprite.scale.set(2.4, 3.6, 1);
+            nonoSprite.position.copy(nono.position);
+            scene.add(nonoSprite);
+
+            nonoSprite.userData = { type: 'nono' };
+            interactiveObjects.push(nonoSprite);
+        }
+
+        function createZykerCharacter() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 384;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 256, 384);
+
+            ctx.fillStyle = '#1e3a8a';
+            ctx.fillRect(50, 130, 156, 160);
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(85, 130, 86, 160);
+            ctx.fillStyle = '#dc2626';
+            ctx.fillRect(50, 280, 156, 10);
+
+            ctx.fillStyle = '#ffefcd';
+            ctx.beginPath(); ctx.ellipse(128, 70, 46, 54, 0, 0, Math.PI * 2); ctx.fill();
+
+            ctx.fillStyle = '#facc15';
+            ctx.beginPath(); ctx.ellipse(128, 44, 44, 22, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#ca8a04';
+            for (let i = 0; i < 25; i++) {
+                ctx.beginPath(); ctx.arc(110 + (Math.random()*36), 34 + (Math.random()*18), 2, 0, Math.PI * 2); ctx.fill();
+            }
+
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(108, 65, 7, 0, Math.PI * 2); ctx.arc(148, 65, 7, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#1e3a8a'; ctx.beginPath(); ctx.arc(108, 65, 4, 0, Math.PI * 2); ctx.arc(148, 65, 4, 0, Math.PI * 2); ctx.fill();
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture });
+            zykerSprite = new THREE.Sprite(spriteMat);
+            zykerSprite.scale.set(2.6, 3.8, 1);
+            zykerSprite.position.copy(zyker.position);
+            scene.add(zykerSprite);
+
+            zykerSprite.userData = { type: 'zyker' };
+            interactiveObjects.push(zykerSprite);
+
+            const invisibleWallGeo = new THREE.BoxGeometry(3, 4, 24);
+            const invisibleWallMat = new THREE.MeshBasicMaterial({ visible: false });
+            const mesh = new THREE.Mesh(invisibleWallGeo, invisibleWallMat);
+            mesh.position.copy(zyker.position);
+            scene.add(mesh);
+            zykerBox = new THREE.Box3().setFromObject(mesh);
+            wallBoxes.push(zykerBox);
+        }
+
+        function createMylesCharacter() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 384;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 256, 384);
+
+            ctx.fillStyle = '#2563eb';
+            ctx.fillRect(58, 140, 140, 240);
+
+            ctx.fillStyle = '#fce2d0';
+            ctx.beginPath(); ctx.ellipse(128, 85, 48, 56, 0, 0, Math.PI * 2); ctx.fill();
+
+            ctx.fillStyle = '#442c1e';
+            ctx.beginPath(); ctx.ellipse(128, 48, 50, 24, 0, 0, Math.PI * 2); ctx.fill();
+            for (let i = 0; i < 25; i++) {
+                ctx.beginPath(); ctx.arc(128 + (Math.random()-0.5)*80, 40 + (Math.random()-0.5)*30, 4 + Math.random()*2, 0, Math.PI * 2); ctx.fill();
+            }
+
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#1e3a8a';
+            ctx.beginPath(); ctx.rect(98, 72, 24, 18); ctx.stroke();
+            ctx.beginPath(); ctx.rect(134, 72, 24, 18); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(122, 81); ctx.lineTo(134, 81); ctx.stroke();
+
+            ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(110, 81, 6, 0, Math.PI * 2); ctx.arc(146, 81, 6, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.arc(110, 81, 3.5, 0, Math.PI * 2); ctx.arc(146, 81, 3.5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(110, 81, 1.5, 0, Math.PI * 2); ctx.arc(146, 81, 1.5, 0, Math.PI * 2); ctx.fill();
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture });
+            mylesSprite = new THREE.Sprite(spriteMat);
+            mylesSprite.scale.set(2.4, 3.6, 1);
+            mylesSprite.position.copy(myles.position);
+            scene.add(mylesSprite);
+
+            mylesSprite.userData = { type: 'myles' };
+            interactiveObjects.push(mylesSprite);
+        }
+
+        function createWall(x, z, width, depth, height = 4, color = 0x2563eb) {
+            const group = new THREE.Group();
+            group.position.set(x, 0, z);
+
+            const wW = width > 2 ? width : 2;
+            const wD = depth > 2 ? depth : 2;
+
+            const upperGeo = new THREE.BoxGeometry(wW, height * 0.55, wD);
+            const upperMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 });
+            const upper = new THREE.Mesh(upperGeo, upperMat);
+            upper.position.y = height * 0.72;
+            group.add(upper);
+
+            const brickGeo = new THREE.BoxGeometry(wW, height * 0.45, wD);
+            const brickMat = getBrickMaterial(Math.max(wW, wD), height * 0.45);
+            const brick = new THREE.Mesh(brickGeo, brickMat);
+            brick.position.y = height * 0.225;
+            group.add(brick);
+
+            scene.add(group);
+
+            const bbox = new THREE.Box3().setFromObject(upper);
+            wallBoxes.push(bbox);
+            return group;
+        }
+
+        function buildClassroomWithCorridor(x, z, width, depth, doorSide = 'south', wallColor = 0x3b82f6) {
+            const hW = width / 2;
+            const hD = depth / 2;
+            const doorGap = 4;
+
+            if (doorSide === 'south') {
+                createWall(x, z - hD, width, 1.5, 4, wallColor);
+                createWall(x - hW / 2 - doorGap / 4, z + hD, hW - doorGap / 2, 1.5, 4, wallColor);
+                createWall(x + hW / 2 + doorGap / 4, z + hD, hW - doorGap / 2, 1.5, 4, wallColor);
+            } else if (doorSide === 'north') {
+                createWall(x - hW / 2 - doorGap / 4, z - hD, hW - doorGap / 2, 1.5, 4, wallColor);
+                createWall(x + hW / 2 + doorGap / 4, z - hD, hW - doorGap / 2, 1.5, 4, wallColor);
+                createWall(x, z + hD, width, 1.5, 4, wallColor);
+            } else {
+                createWall(x, z - hD, width, 1.5, 4, wallColor);
+                createWall(x, z + hD, width, 1.5, 4, wallColor);
+            }
+
+            if (doorSide === 'east') {
+                createWall(x - hW, z, 1.5, depth, 4, wallColor);
+                createWall(x + hW, z - hD / 2 - doorGap / 4, 1.5, hD - doorGap / 2, 4, wallColor);
+                createWall(x + hW, z + hD / 2 + doorGap / 4, 1.5, hD - doorGap / 2, 4, wallColor);
+            } else if (doorSide === 'west') {
+                createWall(x - hW, z - hD / 2 - doorGap / 4, 1.5, hD - doorGap / 2, 4, wallColor);
+                createWall(x - hW, z + hD / 2 + doorGap / 4, 1.5, hD - doorGap / 2, 4, wallColor);
+                createWall(x + hW, z, 1.5, depth, 4, wallColor);
+            } else {
+                createWall(x - hW, z, 1.5, depth, 4, wallColor);
+                createWall(x + hW, z, 1.5, depth, 4, wallColor);
+            }
+
+            let dX = x, dZ = z, dRot = 0;
+            if (doorSide === 'south') { dZ += hD; dRot = 0; }
+            else if (doorSide === 'north') { dZ -= hD; dRot = 0; }
+            else if (doorSide === 'east') { dX += hW; dRot = Math.PI / 2; }
+            else if (doorSide === 'west') { dX -= hW; dRot = Math.PI / 2; }
+
+            const doorFrameGeo = new THREE.BoxGeometry(3.8, 3.4, 0.4);
+            const doorFrameMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3 });
+            const frame = new THREE.Mesh(doorFrameGeo, doorFrameMat);
+            frame.position.set(dX, 1.7, dZ);
+            frame.rotation.y = dRot;
+            scene.add(frame);
+
+            const doorGeo = new THREE.BoxGeometry(3.4, 3.0, 0.2);
+            const doorMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.4 });
+            const classroomDoor = new THREE.Mesh(doorGeo, doorMat);
+            classroomDoor.position.set(dX, 1.5, dZ);
+            classroomDoor.rotation.y = dRot;
+            scene.add(classroomDoor);
+
+            const winGeo = new THREE.BoxGeometry(0.2, 1.6, 3.0);
+            const winMat = new THREE.MeshStandardMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.7, roughness: 0.1 });
+            const win1 = new THREE.Mesh(winGeo, winMat);
+            win1.position.set(x - hW, 2.2, z);
+            scene.add(win1);
+
+            const win2 = new THREE.Mesh(winGeo, winMat);
+            win2.position.set(x + hW, 2.2, z);
+            scene.add(win2);
+
+            const boardGeo = new THREE.BoxGeometry(width * 0.4, 1.5, 0.1);
+            const boardMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.5 });
+            const board = new THREE.Mesh(boardGeo, boardMat);
+            board.position.set(x, 2, z - hD + 0.2);
+            scene.add(board);
+        }
+
+        function buildSchoolMap() {
+            const floorGeo = new THREE.PlaneGeometry(180, 180);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.4, metalness: 0.1 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            scene.add(floor);
+
+            const ceilingMat = new THREE.MeshStandardMaterial({ color: 0xfde047, roughness: 0.7, metalness: 0.1 });
+            const ceiling = new THREE.Mesh(floorGeo, ceilingMat);
+            ceiling.position.y = 4;
+            ceiling.rotation.x = Math.PI / 2;
+            scene.add(ceiling);
+
+            createWall(0, -90, 180, 2, 4, 0x1d4ed8);
+            createWall(0, 90, 180, 2, 4, 0x1d4ed8);
+            createWall(-90, 0, 2, 180, 4, 0x1d4ed8);
+            createWall(90, 0, 2, 180, 4, 0x1d4ed8);
+
+            createWall(-12, 35, 2, 60, 4, 0x1e40af);
+            createWall(12, 35, 2, 60, 4, 0x1e40af);
+            createWall(-12, -35, 2, 60, 4, 0x1e40af);
+            createWall(12, -35, 2, 60, 4, 0x1e40af);
+
+            createWall(-45, -12, 40, 2, 4, 0x1e40af);
+            createWall(45, -12, 40, 2, 4, 0x1e40af);
+            createWall(-45, 12, 40, 2, 4, 0x1e40af);
+            createWall(45, 12, 40, 2, 4, 0x1e40af);
+
+            createWall(-30, 70, 30, 2, 4, 0x1e40af);
+            createWall(30, 70, 30, 2, 4, 0x1e40af);
+            createWall(-30, -70, 30, 2, 4, 0x1e40af);
+            createWall(30, -70, 30, 2, 4, 0x1e40af);
+            createWall(-70, -30, 2, 30, 4, 0x1e40af);
+            createWall(70, -30, 2, 30, 4, 0x1e40af);
+
+            const classrooms = [
+                { x: -65, z: -65, w: 18, d: 14, door: 'south' },
+                { x: 0, z: -65, w: 18, d: 14, door: 'south' },
+                { x: 65, z: -65, w: 18, d: 14, door: 'south' },
+                { x: -65, z: 25, w: 18, d: 14, door: 'east' },
+                { x: 65, z: 25, w: 18, d: 14, door: 'west' },
+                { x: -65, z: 65, w: 18, d: 14, door: 'north' },
+                { x: 65, z: 65, w: 18, d: 14, door: 'north' }
+            ];
+
+            classrooms.forEach((room, idx) => {
+                buildClassroomWithCorridor(room.x, room.z, room.w, room.d, room.door, 0x2563eb);
+                spawnNotebook(room.x, room.z, idx);
+            });
+
+            const cafeFloorGeo = new THREE.PlaneGeometry(30, 20);
+            const cafeFloorMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
+            const cafeFloorMesh = new THREE.Mesh(cafeFloorGeo, cafeFloorMat);
+            cafeFloorMesh.rotation.x = -Math.PI / 2;
+            cafeFloorMesh.position.set(-65, 0.02, -20);
+            scene.add(cafeFloorMesh);
+
+            createWall(-65, -30, 30, 1.5, 4, 0x1e40af);
+            createWall(-80, -20, 1.5, 20, 4, 0x1e40af);
+            createWall(-65, -10, 30, 1.5, 4, 0x1e40af);
+            createWall(-50, -26, 1.5, 8, 4, 0x1e40af);
+            createWall(-50, -14, 1.5, 8, 4, 0x1e40af);
+
+            for (let tx = -74; tx <= -56; tx += 9) {
+                const tableGeo = new THREE.BoxGeometry(5, 1.2, 3.5);
+                const tableMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3 });
+                const table = new THREE.Mesh(tableGeo, tableMat);
+                table.position.set(tx, 0.6, -20);
+                scene.add(table);
+                wallBoxes.push(new THREE.Box3().setFromObject(table));
+            }
+
+            spawnVendingMachine(-20, 25, 0);
+            spawnVendingMachine(20, -25, Math.PI);
+
+            spawnItem(-30, 50, 'coin', '🪙 Quarter');
+            spawnItem(30, 25, 'coin', '🪙 Quarter');
+            spawnItem(-40, -20, 'soda', '🥤 Energy Soda');
+
+            // Escape Doors with Two Distinct Windows and Golden Round Door Knobs
+            spawnExitDoor(0, 89.2, 6, 3.2, 0.8, 0);
+            spawnExitDoor(89.2, 0, 0.8, 3.2, 6, Math.PI / 2);
+        }
+
+        function spawnExitDoor(x, z, w, h, d, rotationY) {
+            const group = new THREE.Group();
+            group.position.set(x, 1.6, z);
+            group.rotation.y = rotationY;
+
+            // Yellow Exit Door Frame/Body
+            const exitGeo = new THREE.BoxGeometry(w, h, d);
+            const exitMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xca8a04, emissiveIntensity: 0.5, roughness: 0.2 });
+            const exitDoor = new THREE.Mesh(exitGeo, exitMat);
+            group.add(exitDoor);
+
+            // Two Distinct Glass Windows (Left and Right)
+            const winGeo = new THREE.BoxGeometry(w * 0.26, h * 0.45, d * 1.5);
+            const winMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.4, transparent: true, opacity: 0.6, roughness: 0.1 });
+            
+            const winLeft = new THREE.Mesh(winGeo, winMat);
+            winLeft.position.set(-w * 0.25, 0.4, 0);
+            group.add(winLeft);
+
+            const winRight = new THREE.Mesh(winGeo, winMat);
+            winRight.position.set(w * 0.25, 0.4, 0);
+            group.add(winRight);
+
+            // Golden Round Door Knobs
+            const knobGeo = new THREE.SphereGeometry(0.2, 16, 16);
+            const knobMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.9, roughness: 0.1, emissive: 0xd97706, emissiveIntensity: 0.3 });
+            
+            const knob = new THREE.Mesh(knobGeo, knobMat);
+            knob.position.set(w * 0.35, -0.2, d * 0.6);
+            group.add(knob);
+
+            group.userData = { type: 'exit', opened: false, mesh: exitDoor };
+            scene.add(group);
+            interactiveObjects.push(group);
+            wallBoxes.push(new THREE.Box3().setFromObject(exitDoor));
+        }
+
+        function spawnVendingMachine(x, z, rotationY) {
+            const group = new THREE.Group();
+            group.position.set(x, 0, z);
+            group.rotation.y = rotationY;
+
+            const bodyGeo = new THREE.BoxGeometry(2.2, 3.8, 1.6);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.5, roughness: 0.2 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 1.9;
+            group.add(body);
+
+            const glassGeo = new THREE.BoxGeometry(1.6, 2.0, 0.1);
+            const glassMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.4, transparent: true, opacity: 0.7 });
+            const glass = new THREE.Mesh(glassGeo, glassMat);
+            glass.position.set(0, 2.2, 0.81);
+            group.add(glass);
+
+            const canColors = [0xef4444, 0x3b82f6, 0xfacc15, 0x10b981];
+            for (let row = 0; row < 3; row++) {
+                for (let col = -2; col <= 2; col++) {
+                    const canGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.4, 12);
+                    const canMat = new THREE.MeshStandardMaterial({ color: canColors[(row + col) % canColors.length], metalness: 0.6 });
+                    const can = new THREE.Mesh(canGeo, canMat);
+                    can.position.set(col * 0.28, 1.6 + row * 0.45, 0.72);
+                    group.add(can);
+                }
+            }
+
+            group.userData = { type: 'vending' };
+            scene.add(group);
+
+            const bbox = new THREE.Box3().setFromObject(body);
+            wallBoxes.push(bbox);
+            interactiveObjects.push(group);
+        }
+
+        function spawnItem(x, z, itemType, name) {
+            const group = new THREE.Group();
+            group.position.set(x, 0, z);
+
+            if (itemType === 'coin') {
+                group.position.y = 0.5;
+                const coinGeo = new THREE.CylinderGeometry(0.45, 0.45, 0.1, 32);
+                const coinMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9, roughness: 0.1, emissive: 0xca8a04, emissiveIntensity: 0.2 });
+                const coin = new THREE.Mesh(coinGeo, coinMat);
+                coin.rotation.x = Math.PI / 2;
+                group.add(coin);
+            } else if (itemType === 'soda') {
+                group.position.y = 0.4;
+                const canGeo = new THREE.CylinderGeometry(0.32, 0.32, 1.0, 24);
+                const canMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.7, roughness: 0.2 });
+                const can = new THREE.Mesh(canGeo, canMat);
+                group.add(can);
+            }
+
+            group.userData = { type: 'pickup', itemType: itemType, name: name, collected: false };
+            scene.add(group);
+            interactiveObjects.push(group);
+        }
+
+        function spawnNotebook(x, z, id) {
+            const deskGeo = new THREE.BoxGeometry(2.2, 1.2, 1.6);
+            const deskMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.6 });
+            const desk = new THREE.Mesh(deskGeo, deskMat);
+            desk.position.set(x, 0.6, z);
+            desk.userData = { type: 'notebook', id: id, collected: false };
+            scene.add(desk);
+            wallBoxes.push(new THREE.Box3().setFromObject(desk));
+
+            const nbGeo = new THREE.BoxGeometry(1.2, 0.2, 1.0);
+            const nbMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.2 });
+            const notebook = new THREE.Mesh(nbGeo, nbMat);
+            notebook.position.set(x, 1.35, z);
+            notebook.userData = { type: 'notebook', id: id, collected: false };
+            scene.add(notebook);
+
+            interactiveObjects.push(notebook);
+            interactiveObjects.push(desk);
+        }
+
+        function setupControls() {
+            window.addEventListener('keydown', (e) => {
+                keyState[e.code] = true;
+                if (e.code === 'KeyE' && isPointerLocked && !isQuizActive && !isZykerModalActive) {
+                    checkInteraction();
+                }
+            });
+            window.addEventListener('keyup', (e) => {
+                keyState[e.code] = false;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isPointerLocked || isQuizActive || isZykerModalActive) return;
+                player.rotation.yaw -= e.movementX * 0.0025;
+                player.rotation.pitch -= e.movementY * 0.0025;
+                player.rotation.pitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, player.rotation.pitch));
+                camera.rotation.set(player.rotation.pitch, player.rotation.yaw, 0);
+
+                updateInteractionPrompt();
+            });
+
+            document.addEventListener('click', () => {
+                if (!isPointerLocked && isGameActive && !isQuizActive && !isZykerModalActive) {
+                    document.body.requestPointerLock();
+                } else if (isPointerLocked && !isQuizActive && !isZykerModalActive) {
+                    checkInteraction();
+                }
+            });
+
+            document.addEventListener('pointerlockchange', () => {
+                isPointerLocked = document.pointerLockElement === document.body;
+            });
+        }
+
+        function updateInteractionPrompt() {
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            const intersects = raycaster.intersectObjects(interactiveObjects, true);
+
+            const prompt = document.getElementById('interaction-prompt');
+            if (intersects.length > 0 && intersects[0].distance < 8.0) {
+                let obj = intersects[0].object;
+                while (obj.parent && obj.parent !== scene && !obj.userData.type) {
+                    obj = obj.parent;
+                }
+                if ((obj.userData.type === 'notebook' && !obj.userData.collected) || obj.userData.type === 'pickup' || obj.userData.type === 'vending' || obj.userData.type === 'nono' || obj.userData.type === 'myles' || (obj.userData.type === 'exit' && !obj.userData.opened) || (obj.userData.type === 'zyker' && zyker.active)) {
+                    prompt.classList.remove('hidden');
+                    return;
+                }
+            }
+            prompt.classList.add('hidden');
+        }
+
+        function checkInteraction() {
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            const intersects = raycaster.intersectObjects(interactiveObjects, true);
+
+            if (intersects.length > 0 && intersects[0].distance < 8.0) {
+                let obj = intersects[0].object;
+                while (obj.parent && obj.parent !== scene && !obj.userData.type) {
+                    obj = obj.parent;
+                }
+
+                if (obj.userData.type === 'notebook' && !obj.userData.collected) {
+                    openQuizModal(obj);
+                } else if (obj.userData.type === 'pickup' && !obj.userData.collected) {
+                    obj.userData.collected = true;
+                    scene.remove(obj);
+                    playSound('pickup');
+                    addItemToInventory(obj.userData.name);
+                } else if (obj.userData.type === 'zyker' && zyker.active) {
+                    openZykerModal();
+                } else if (obj.userData.type === 'myles') {
+                    if (hasItem('🪙 Quarter')) {
+                        removeItem('🪙 Quarter');
+                        playSound('pickup');
+                        addItemToInventory('♟️ Chess Board');
+                        showMessage("Myles: 'Here is a chess board! Use it to block and skip a wrong answer penalty!'");
+                    } else {
+                        playSound('correct');
+                        showMessage("Myles: 'Bring me a Quarter and I'll trade you a chess board!'");
+                    }
+                } else if (obj.userData.type === 'nono') {
+                    if (hasItem('🥤 Energy Soda')) {
+                        removeItem('🥤 Energy Soda');
+                        playSound('stun');
+                        nono.isChasingRushton = true;
+                        showMessage("Gave Energy Soda to Nono! Nono is hunting Mr. Rushton!");
+                    } else {
+                        playSound('correct');
+                        showMessage("Nono says: 'Bring me an Energy Soda to stun Mr. Rushton!'");
+                    }
+                } else if (obj.userData.type === 'vending') {
+                    if (hasItem('🪙 Quarter')) {
+                        removeItem('🪙 Quarter');
+                        playSound('pickup');
+                        addItemToInventory('🥤 Energy Soda');
+                        showMessage("Used Quarter! Got Energy Soda!");
+                    } else {
+                        showMessage("You need a Quarter for the vending machine!");
+                    }
+                } else if (obj.userData.type === 'exit' && !obj.userData.opened) {
+                    if (player.notebooksCollected >= 7) {
+                        obj.userData.opened = true;
+                        obj.userData.mesh.material.color.setHex(0x22c55e);
+                        exitsOpenedCount++;
+                        playSound('correct');
+
+                        if (exitsOpenedCount >= totalExits) {
+                            alert("BOTH EXITS OPENED! YOU WIN!");
+                            location.reload();
+                        } else {
+                            showMessage(`Exit opened! (${exitsOpenedCount}/${totalExits} exits activated)`);
+                        }
+                    } else {
+                        showMessage("Find all 7 notebooks first!");
+                    }
+                }
+            }
+        }
+
+        function openZykerModal() {
+            const availableItems = player.inventory.filter(item => item !== null);
+            if (availableItems.length === 0) {
+                playSound('bully');
+                showMessage("Zyker says: 'You have nothing I want! Come back with an item!'");
+                return;
+            }
+
+            isZykerModalActive = true;
+            document.exitPointerLock();
+            const modal = document.getElementById('zyker-modal');
+            const optionsContainer = document.getElementById('zyker-item-options');
+            optionsContainer.innerHTML = '';
+
+            player.inventory.forEach((item, slotIdx) => {
+                if (item) {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full bg-yellow-400 hover:bg-yellow-300 border-2 border-black font-pixel text-xs sm:text-sm py-3 px-4 rounded cursor-pointer flex justify-between items-center text-black font-bold";
+                    btn.innerText = `GIVE ${item.toUpperCase()}`;
+                    btn.onclick = () => {
+                        giveItemToZyker(slotIdx);
+                    };
+                    optionsContainer.appendChild(btn);
+                }
+            });
+
+            modal.classList.remove('hidden');
+        }
+
+        function giveItemToZyker(slotIdx) {
+            const givenItem = player.inventory[slotIdx];
+            removeItem(givenItem);
+            playSound('bully');
+            
+            zyker.active = false;
+            scene.remove(zykerSprite);
+            
+            const idx = wallBoxes.indexOf(zykerBox);
+            if (idx !== -1) wallBoxes.splice(idx, 1);
+
+            closeZykerModal();
+            showMessage(`Zyker says: "Ayo chill!" and takes your ${givenItem}. West corridor cleared!`);
+        }
+
+        function closeZykerModal() {
+            isZykerModalActive = false;
+            document.getElementById('zyker-modal').classList.add('hidden');
+            document.body.requestPointerLock();
+        }
+
+        function addItemToInventory(itemName) {
+            for (let i = 0; i < 3; i++) {
+                if (!player.inventory[i]) {
+                    player.inventory[i] = itemName;
+                    updateInventoryUI();
+                    return;
+                }
+            }
+            showMessage("Inventory full!");
+        }
+
+        function hasItem(itemName) {
+            return player.inventory.includes(itemName);
+        }
+
+        function removeItem(itemName) {
+            const idx = player.inventory.indexOf(itemName);
+            if (idx !== -1) {
+                player.inventory[idx] = null;
+                updateInventoryUI();
+            }
+        }
+
+        function useItem(slotIdx) {
+            const item = player.inventory[slotIdx];
+            if (item === '🥤 Energy Soda') {
+                player.stamina = player.maxStamina;
+                playSound('drink');
+                player.inventory[slotIdx] = null;
+                updateInventoryUI();
+                showMessage("Restored Full Stamina!");
+            } else if (item === '♟️ Chess Board') {
+                showMessage("Chess Board ready! It will automatically block the next wrong answer penalty.");
+            }
+        }
+
+        function updateInventoryUI() {
+            for (let i = 0; i < 3; i++) {
+                const slot = document.getElementById(`slot-${i}`);
+                slot.innerText = player.inventory[i] ? player.inventory[i].split(' ')[0] : '';
+            }
+        }
+
+        function showMessage(msg) {
+            const el = document.getElementById('game-message');
+            el.innerText = msg;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 2500);
+        }
+
+        let currentNotebookObj = null;
+        let currentProblemIndex = 0;
+
+        function openQuizModal(nbObj) {
+            isQuizActive = true;
+            currentNotebookObj = nbObj;
+            currentProblemIndex = 0;
+            document.exitPointerLock();
+            document.getElementById('quiz-modal').classList.remove('hidden');
+            loadQuizProblem();
+        }
+
+        function loadQuizProblem() {
+            if (currentProblemIndex >= 3) {
+                currentNotebookObj.userData.collected = true;
+                
+                interactiveObjects.forEach(item => {
+                    if (item.userData.id === currentNotebookObj.userData.id) {
+                        item.userData.collected = true;
+                        scene.remove(item);
+                    }
+                });
+
+                player.notebooksCollected++;
+                document.getElementById('notebook-count').innerText = `${player.notebooksCollected}/7`;
+                
+                rushton.angerLevel += 0.22;
+                showMessage(`Notebook collected! Mr. Rushton is getting faster! (${player.notebooksCollected}/7)`);
+
+                document.getElementById('quiz-modal').classList.add('hidden');
+                document.getElementById('interaction-prompt').classList.add('hidden');
+                
+                isQuizActive = false;
+                document.body.requestPointerLock();
+                return;
+            }
+
+            document.getElementById('quiz-progress').innerText = `PROBLEM ${currentProblemIndex + 1}/3`;
+            
+            const isGlitchedProblem = (player.notebooksCollected >= 1 && currentProblemIndex === 2);
+
+            let ans = 0;
+            let opts = [];
+
+            if (isGlitchedProblem) {
+                document.getElementById('quiz-question').innerText = "CRASH_OVF_99 / 0 = ?";
+                opts = [404, 666, 1337, -999];
+            } else {
+                const n1 = Math.floor(Math.random() * 9) + 1;
+                const n2 = Math.floor(Math.random() * 9) + 1;
+                ans = n1 + n2;
+                document.getElementById('quiz-question').innerText = `${n1} + ${n2} = ?`;
+                opts = [ans, ans + 1, ans - 1, ans + 2];
+            }
+
+            opts.sort(() => Math.random() - 0.5);
+            const optsContainer = document.getElementById('quiz-options');
+            optsContainer.innerHTML = '';
+
+            opts.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "w-full bg-yellow-400 hover:bg-yellow-300 border-2 border-black font-mono font-bold text-xl py-2 rounded cursor-pointer text-black";
+                btn.innerText = opt;
+                btn.onclick = () => {
+                    if (!isGlitchedProblem && opt === ans) {
+                        playSound('correct');
+                        currentProblemIndex++;
+                        loadQuizProblem();
+                    } else {
+                        if (hasItem('♟️ Chess Board')) {
+                            removeItem('♟️ Chess Board');
+                            playSound('correct');
+                            showMessage("Chess Board used! Evaded wrong answer penalty!");
+                            currentProblemIndex++;
+                            loadQuizProblem();
+                        } else {
+                            playSound('wrong');
+                            rushton.angerLevel += 0.35;
+                            
+                            if (player.notebooksCollected >= 1 || currentProblemIndex >= 2) {
+                                if (!rushton.isAggro) {
+                                    rushton.isAggro = true;
+                                    showMessage("Mr. Rushton heard you get that wrong! He is now chasing you!");
+                                }
+                            }
+
+                            currentProblemIndex++;
+                            loadQuizProblem();
+                        }
+                    }
+                };
+                optsContainer.appendChild(btn);
+            });
+        }
+
+        function checkCollision(newPos, radius = 0.6) {
+            const playerBox = new THREE.Box3(
+                new THREE.Vector3(newPos.x - radius, 0.1, newPos.z - radius),
+                new THREE.Vector3(newPos.x + radius, 3.2, newPos.z + radius)
+            );
+
+            for (let box of wallBoxes) {
+                if (playerBox.intersectsBox(box)) return true;
+            }
+            return false;
+        }
+
+        function updatePlayerPhysics() {
+            if (!isGameActive || isQuizActive || isZykerModalActive) return;
+
+            const isSprinting = !!(keyState['ShiftLeft'] || keyState['ShiftRight'] || keyState['Shift']);
+            let speed = (isSprinting && player.stamina > 0) ? 0.09 : 0.06;
+
+            if (isSprinting && player.stamina > 0) {
+                player.stamina = Math.max(0, player.stamina - 0.45);
+            } else if (player.stamina < player.maxStamina) {
+                player.stamina = Math.min(player.maxStamina, player.stamina + 0.3);
+            }
+            document.getElementById('stamina-fill').style.width = `${(player.stamina / player.maxStamina) * 100}%`;
+
+            // DIRECT AXIS MOVEMENT SCHEME (W = Up/Forward Z, S = Down/Backward Z, A = Left X, D = Right X)
+            let moveX = 0, moveZ = 0;
+            if (keyState['KeyW'] || keyState['ArrowUp'] || keyState['KeyZ']) moveZ -= 1; // Move Up (-Z)
+            if (keyState['KeyS'] || keyState['ArrowDown']) moveZ += 1;                  // Move Down (+Z)
+            if (keyState['KeyA'] || keyState['ArrowLeft'] || keyState['KeyQ']) moveX -= 1; // Move Left (-X)
+            if (keyState['KeyD'] || keyState['ArrowRight']) moveX += 1;                 // Move Right (+X)
+
+            const len = Math.hypot(moveX, moveZ);
+            if (len > 0) {
+                const nextX = player.position.x + (moveX / len) * speed;
+                const nextZ = player.position.z + (moveZ / len) * speed;
+
+                if (!checkCollision({ x: nextX, z: player.position.z }, player.radius)) player.position.x = nextX;
+                if (!checkCollision({ x: player.position.x, z: nextZ }, player.radius)) player.position.z = nextZ;
+            }
+
+            camera.position.copy(player.position);
+        }
+
+        function getDirectSteeringDir(currentPos, targetPos, radius) {
+            const direct = new THREE.Vector3().subVectors(targetPos, currentPos);
+            direct.y = 0;
+            direct.normalize();
+
+            const testPos = { x: currentPos.x + direct.x * 1.5, z: currentPos.z + direct.z * 1.5 };
+            if (!checkCollision(testPos, radius)) {
+                return direct;
+            }
+
+            const testAngles = [0.4, -0.4, 0.8, -0.8, 1.2, -1.2, 1.6, -1.6, 2.0, -2.0, 2.4, -2.4, 2.8, -2.8, Math.PI];
+            for (let angle of testAngles) {
+                const rotated = direct.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+                const samplePos = { x: currentPos.x + rotated.x * 1.5, z: currentPos.z + rotated.z * 1.5 };
+                if (!checkCollision(samplePos, radius)) {
+                    return rotated;
+                }
+            }
+
+            return direct;
+        }
+
+        function updateRushtonAI() {
+            if (!isGameActive || isQuizActive || isZykerModalActive) return;
+
+            if (!rushton.isAggro) {
+                rushtonSprite.position.copy(rushton.position);
+                return;
+            }
+
+            if (rushton.stunDurationTimer > 0) {
+                rushton.stunDurationTimer--;
+                return;
+            }
+
+            rushton.stuckCheckTimer++;
+            if (rushton.stuckCheckTimer > 2400) {
+                rushton.stuckCheckTimer = 0;
+                if (rushton.position.distanceTo(rushton.lastPosition) < 0.8) {
+                    let telePlaced = false;
+                    for (let attempt = 0; attempt < 10; attempt++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const dist = 10 + Math.random() * 4;
+                        const tX = player.position.x + Math.cos(angle) * dist;
+                        const tZ = player.position.z + Math.sin(angle) * dist;
+                        if (!checkCollision({ x: tX, z: tZ }, rushton.radius)) {
+                            rushton.position.set(tX, 1.6, tZ);
+                            telePlaced = true;
+                            break;
+                        }
+                    }
+                    if (!telePlaced) {
+                        rushton.position.set(player.position.x + 10, 1.6, player.position.z + 10);
+                    }
+                }
+                rushton.lastPosition.copy(rushton.position);
+            }
+
+            rushton.slapTimer++;
+            const currentSlapInterval = Math.max(8, rushton.baseSlapInterval - (player.notebooksCollected * 3));
+            
+            if (rushton.slapTimer >= currentSlapInterval) {
+                rushton.slapTimer = 0;
+                playSound('slap');
+
+                const stepDist = rushton.baseSpeed * rushton.angerLevel * 3.8;
+                const moveDir = rushtonMiniMap.getBestNavDir(rushton.position, player.position);
+
+                const nextX = rushton.position.x + moveDir.x * stepDist;
+                const nextZ = rushton.position.z + moveDir.z * stepDist;
+
+                if (!checkCollision({ x: nextX, z: rushton.position.z }, rushton.radius)) {
+                    rushton.position.x = nextX;
+                }
+                if (!checkCollision({ x: rushton.position.x, z: nextZ }, rushton.radius)) {
+                    rushton.position.z = nextZ;
+                }
+
+                rushtonSprite.position.copy(rushton.position);
+            }
+
+            if (rushton.position.distanceTo(player.position) < 2.5) {
+                playSound('jumpscare');
+                isGameActive = false;
+                document.exitPointerLock();
+                document.getElementById('end-screen').classList.remove('hidden');
+            }
+        }
+
+        function updateNonoAI() {
+            if (!isGameActive || isQuizActive || isZykerModalActive) return;
+
+            let targetPos = nono.homePosition;
+            if (nono.isChasingRushton) {
+                targetPos = rushton.position;
+
+                nono.stuckCheckTimer++;
+                if (nono.stuckCheckTimer > 2400) {
+                    nono.stuckCheckTimer = 0;
+                    if (nono.position.distanceTo(nono.lastPosition) < 0.8) {
+                        const escapeDir = new THREE.Vector3().subVectors(rushton.position, nono.position).normalize();
+                        const nudgePos = { x: nono.position.x + escapeDir.x * 3.0, z: nono.position.z + escapeDir.z * 3.0 };
+                        if (!checkCollision(nudgePos, nono.radius)) {
+                            nono.position.x = nudgePos.x;
+                            nono.position.z = nudgePos.z;
+                        }
+                    }
+                    nono.lastPosition.copy(nono.position);
+                }
+
+                if (nono.position.distanceTo(rushton.position) < 3.5) {
+                    playSound('stun');
+                    rushton.stunDurationTimer = 1200;
+                    nono.isChasingRushton = false;
+                    nono.position.copy(nono.homePosition);
+                    showMessage("Nono stunned Mr. Rushton!");
+                }
+            }
+
+            const stepDist = nono.speed;
+            const moveDir = getDirectSteeringDir(nono.position, targetPos, nono.radius);
+
+            const nextX = nono.position.x + moveDir.x * stepDist;
+            const nextZ = nono.position.z + moveDir.z * stepDist;
+
+            if (!checkCollision({ x: nextX, z: nono.position.z }, nono.radius)) {
+                nono.position.x = nextX;
+            }
+            if (!checkCollision({ x: nextX, z: nextZ }, nono.radius)) {
+                nono.position.z = nextZ;
+            }
+
+            nonoSprite.position.copy(nono.position);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            updatePlayerPhysics();
+            updateRushtonAI();
+            updateNonoAI();
+            renderer.render(scene, camera);
+        }
+
+        function startGame() {
+            initAudio();
+            init3D();
+            isGameActive = true;
+            document.getElementById('start-screen').classList.add('hidden');
+            setTimeout(() => {
+                document.body.requestPointerLock();
+            }, 100);
+            animate();
+        }
+
+        function resetGame() {
+            location.reload();
+        }
+
+        function onWindowResize() {
+            if (!camera || !renderer) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
 </body>
 </html>
