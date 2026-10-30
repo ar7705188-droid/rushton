@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mr. Rushton's Basics in Learning & Math! 2</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&family=VT323&display=swap');
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      user-select: none;
+      background-color: #000;
+      font-family: 'Comic Neue', cursive;
+    }
+
+    .retro-font {
+      font-family: 'VT323', monospace;
+    }
+
+    /* CRT scanline overlay effect */
+    .crt::after {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      z-index: 20;
+      background-size: 100% 4px, 6px 100%;
+      pointer-events: none;
+    }
+
+    #crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 10px;
+      height: 10px;
+      margin-top: -5px;
+      margin-left: -5px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .comic-box {
+      border: 4px solid #000;
+      box-shadow: 6px 6px 0px #000;
+    }
+
+    .retro-btn {
+      background: linear-gradient(180deg, #facc15 0%, #ca8a04 100%);
+      border: 4px solid #000;
+      box-shadow: 4px 4px 0px #000;
+      transition: all 0.1s;
+    }
+
+    .retro-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0px #000;
+    }
+  </style>
+</head>
+<body class="crt relative">
+
+  <!-- 3D Canvas Container -->
+  <div id="game-container" class="w-full h-full absolute inset-0"></div>
+
+  <!-- HUD Crosshair -->
+  <div id="crosshair" class="flex items-center justify-center">
+    <div class="w-2.5 h-2.5 bg-yellow-300 rounded-full border border-black shadow"></div>
+  </div>
+
+  <!-- HUD Overlay -->
+  <div id="hud" class="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between z-10 hidden">
+    <!-- Top Bar -->
+    <div class="flex justify-between items-start">
+      <div class="bg-yellow-300 text-black px-4 py-2 rounded-xl border-4 border-black font-extrabold text-xl shadow-lg flex items-center gap-2">
+        <span>📚 Notebooks:</span>
+        <span id="notebook-count" class="text-2xl text-red-600">0/7</span>
+        <span class="ml-4">🪙 Coins:</span>
+        <span id="coin-count" class="text-2xl text-amber-700">0</span>
+      </div>
+
+      <!-- Item Slots & Fullscreen Toggle -->
+      <div class="flex gap-2 items-center pointer-events-auto">
+        <div id="item-0" class="w-16 h-16 bg-blue-600 border-4 border-black rounded-xl flex items-center justify-center text-3xl font-bold text-white shadow-lg"></div>
+        <div id="item-1" class="w-16 h-16 bg-blue-600 border-4 border-black rounded-xl flex items-center justify-center text-3xl font-bold text-white shadow-lg"></div>
+        <div id="item-2" class="w-16 h-16 bg-blue-600 border-4 border-black rounded-xl flex items-center justify-center text-3xl font-bold text-white shadow-lg"></div>
+        <button id="fullscreen-btn" title="Toggle Fullscreen" class="w-16 h-16 bg-yellow-400 hover:bg-yellow-500 border-4 border-black rounded-xl flex items-center justify-center text-2xl font-bold text-black shadow-lg transition transform active:scale-95">
+          ⛶
+        </button>
+      </div>
+    </div>
+
+    <!-- Center Interaction Prompt -->
+    <div id="interact-prompt" class="self-center bg-black/85 text-yellow-300 px-6 py-2 rounded-full border-2 border-yellow-400 font-bold text-lg hidden animate-bounce shadow-md">
+      Press [E] or Click to Interact
+    </div>
+
+    <!-- Bottom Bar -->
+    <div class="flex justify-between items-end">
+      <!-- Stamina Bar -->
+      <div class="w-64 bg-gray-900 border-4 border-black rounded-xl p-1 shadow-lg">
+        <div class="text-xs font-bold text-white px-1 mb-1">STAMINA [SHIFT]</div>
+        <div id="stamina-bar" class="h-5 bg-green-500 rounded-lg transition-all duration-75 w-full"></div>
+      </div>
+
+      <!-- Flashlight & Controls Hint -->
+      <div class="bg-yellow-300 text-black px-3 py-1 rounded-lg border-2 border-black font-bold text-xs shadow">
+        [WASD] Move | [F] Flashlight | [1-3] Item | [E] Interact | [Space] Drink Propel
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Msg -->
+  <div id="game-msg" class="absolute bottom-16 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-black px-6 py-2 border-4 border-black text-xl font-bold opacity-0 transition-opacity z-20 pointer-events-none shadow-2xl text-center rounded-xl">
+    Message
+  </div>
+
+  <!-- CHARACTER INTERACTION DIALOGUE MODAL -->
+  <div id="char-dialogue-modal" class="hidden absolute inset-0 bg-black/75 z-40 flex items-center justify-center p-4">
+    <div class="bg-yellow-300 border-8 border-black p-6 rounded-3xl max-w-md w-full text-black comic-box text-center space-y-4">
+      <h2 id="char-name" class="text-3xl font-black text-blue-900 uppercase">CHARACTER</h2>
+      <p id="char-text" class="text-xl font-bold bg-white p-4 border-4 border-black rounded-xl">"Dialogue line..."</p>
+      <button id="char-dialogue-close" class="retro-btn px-6 py-3 text-xl font-bold bg-green-500 hover:bg-green-400 text-white rounded-xl w-full cursor-pointer">
+        OK
+      </button>
+    </div>
+  </div>
+
+  <!-- Start Menu Screen -->
+  <div id="start-screen" class="absolute inset-0 bg-red-700 flex flex-col items-center justify-center z-30 p-4">
+    <div class="bg-yellow-300 p-8 rounded-3xl border-8 border-black max-w-xl w-full text-center comic-box space-y-4">
+      <h1 class="text-4xl sm:text-5xl font-black text-red-600 tracking-wide uppercase drop-shadow-md">
+        Mr. Rushton's Basics 2
+      </h1>
+      <p class="text-lg text-black font-bold">
+        In Learning & Math!
+      </p>
+
+      <div class="bg-white p-4 rounded-xl border-4 border-black text-left space-y-2 text-sm sm:text-base">
+        <p class="font-bold text-blue-800">📋 YOUR MISSION:</p>
+        <p>• Explore classrooms & <strong>the new Cafeteria</strong> to find <strong>7 Notebooks</strong>.</p>
+        <p>• Navigate wide, spacious school hallways.</p>
+        <p>• Answer 3 math problems per notebook terminal.</p>
+        <p>• <strong>Watch out for Mr. Rushton!</strong> He speeds up when you get questions wrong!</p>
+        <p>• Meet Zyker, Nono, Kiki, Myles Ori, and Tom in the school!</p>
+        <p>• Buy Propel drinks at Vending Machines using coins!</p>
+        <p>• Enter secret code <strong>67</strong> on any terminal!</p>
+      </div>
+
+      <button id="start-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-extrabold text-2xl py-4 rounded-2xl border-4 border-black comic-box transition transform hover:scale-105 active:scale-95">
+        CLICK TO ENTER SCHOOL! 🏫
+      </button>
+
+      <div class="text-xs font-bold text-gray-800 pt-2 border-t-2 border-black/20">
+        Made by Myles Ori, Arturo, Mason Ori, and Myles Web Design
+      </div>
+    </div>
+  </div>
+
+  <!-- Math Terminal Pop-up UI -->
+  <div id="math-terminal" class="absolute inset-0 bg-black/85 flex items-center justify-center z-30 hidden p-4">
+    <div class="bg-blue-900 border-8 border-yellow-400 p-6 rounded-3xl max-w-lg w-full text-white comic-box relative">
+      <div class="flex items-center gap-4 bg-blue-950 p-3 rounded-xl border-2 border-blue-700 mb-4">
+        <div class="w-16 h-16 bg-amber-600 rounded-full border-2 border-white flex items-center justify-center overflow-hidden">
+          <canvas id="rushton-avatar" width="64" height="64"></canvas>
+        </div>
+        <div>
+          <div class="text-yellow-300 font-bold text-lg">Mr. Rushton Says:</div>
+          <div id="rushton-dialogue" class="text-sm font-semibold text-gray-200">"Answer all 3 questions to collect this notebook!"</div>
+        </div>
+      </div>
+
+      <!-- Question Box -->
+      <div class="bg-black border-4 border-green-500 p-4 rounded-xl mb-4 font-mono">
+        <div id="question-number" class="text-xs text-green-400 mb-1">QUESTION 1 OF 3</div>
+        <div id="question-text" class="text-2xl text-green-300 font-bold tracking-wider retro-font min-h-[40px] flex items-center">
+          2 + 2 = ?
+        </div>
+      </div>
+
+      <!-- Answer Form -->
+      <form id="math-form" class="flex gap-2">
+        <input type="text" id="math-input" autocomplete="off" placeholder="Answer..." class="flex-1 bg-white text-black px-4 py-3 rounded-xl text-xl font-bold border-4 border-black focus:outline-none focus:ring-4 focus:ring-yellow-400">
+        <button type="submit" class="bg-yellow-400 hover:bg-yellow-500 text-black font-extrabold px-6 py-3 rounded-xl border-4 border-black">
+          OK
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- RED SHEET DETENTION MODAL -->
+  <div id="red-sheet-modal" class="hidden absolute inset-0 bg-red-950/95 z-50 flex flex-col items-center justify-center p-6 text-center">
+    <div class="bg-red-500 border-8 border-red-900 p-8 max-w-xl w-full text-black comic-box transform -rotate-1 animate-bounce shadow-2xl rounded-2xl">
+      <div class="border-4 border-dashed border-red-950 p-6 bg-red-100 rounded-xl">
+        <h1 class="text-5xl font-black text-red-800 mb-2 tracking-widest uppercase drop-shadow">RED SHEET!</h1>
+        <p class="text-2xl font-bold text-red-950 mb-4 underline">OFFICIAL DETENTION NOTICE</p>
+        <div class="text-left text-lg space-y-2 mb-6 font-mono text-gray-900 bg-white p-4 border-2 border-red-900 shadow-inner rounded-lg">
+          <p><strong>OFFENDER:</strong> PLAYER</p>
+          <p><strong>ISSUED BY:</strong> MR. RUSHTON</p>
+          <p><strong>REASON:</strong> <span id="detention-reason">Caught breaking school rules!</span></p>
+          <p class="text-red-700 font-bold mt-2 uppercase">PUNISHMENT: IMMEDIATE DETENTION & ALL NOTEBOOKS FORFEITED!</p>
+        </div>
+        <button id="restart-btn" class="retro-btn px-8 py-4 text-2xl font-bold bg-yellow-400 text-black hover:bg-yellow-300 w-full cursor-pointer rounded-xl">
+          TRY AGAIN
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VICTORY MODAL -->
+  <div id="victory-modal" class="hidden absolute inset-0 bg-yellow-400 z-50 flex flex-col items-center justify-center p-6 text-black text-center">
+    <h1 class="text-6xl font-black text-blue-800 mb-4">YOU ESCAPED!</h1>
+    <p class="text-2xl font-bold mb-6">You collected all 7 notebooks and escaped Mr. Rushton!</p>
+    <button id="victory-restart-btn" class="retro-btn px-10 py-4 text-3xl font-bold bg-green-400 hover:bg-green-300 rounded-xl">
+      PLAY AGAIN
+    </button>
+  </div>
+
+  <script>
+    /* =========================================================================
+       AUDIO SYNTHESIZER (WEB AUDIO API)
+       ========================================================================= */
+    class AudioSystem {
+      constructor() { this.ctx = null; }
+      init() {
+        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+      }
+      playChime(isCorrect = true) {
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const freqs = isCorrect ? [523.25, 659.25, 783.99] : [180, 140, 100];
+        freqs.forEach((f, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = isCorrect ? 'sine' : 'sawtooth';
+          osc.frequency.setValueAtTime(f, now + i * 0.08);
+          gain.gain.setValueAtTime(0.3, now + i * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.08 + 0.2);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + i * 0.08);
+          osc.stop(now + i * 0.08 + 0.2);
+        });
+      }
+      playBsoda() {
+        if (!this.ctx) return;
+        const bufferSize = this.ctx.sampleRate * 0.4;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const output = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+        const whiteNoise = this.ctx.createBufferSource();
+        whiteNoise.buffer = buffer;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1200, this.ctx.currentTime);
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.6, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+        whiteNoise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+        whiteNoise.start();
+      }
+      playJumpScare() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(90, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(700, this.ctx.currentTime + 0.35);
+        gain.gain.setValueAtTime(1.0, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 1.2);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 1.2);
+      }
+    }
+    const audio = new AudioSystem();
+
+    /* =========================================================================
+       REALISTIC TEXTURE GENERATORS
+       ========================================================================= */
+    function createRushtonCanvas(width = 256, height = 256) {
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext('2d');
+
+      // Black Polo Shirt with fabric texture
+      ctx.fillStyle = '#111827'; ctx.fillRect(70, 145, 116, 110);
+      ctx.fillStyle = '#1f2937';
+      ctx.beginPath(); ctx.moveTo(105, 145); ctx.lineTo(128, 175); ctx.lineTo(112, 185); ctx.lineTo(95, 155); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(151, 145); ctx.lineTo(128, 175); ctx.lineTo(144, 185); ctx.lineTo(161, 155); ctx.fill();
+
+      // Skin Tone with subtle depth shading
+      const grad = ctx.createRadialGradient(128, 82, 5, 128, 82, 45);
+      grad.addColorStop(0, '#ffedd5');
+      grad.addColorStop(1, '#fdba74');
+      ctx.fillStyle = grad; 
+      ctx.fillRect(114, 125, 28, 25);
+      ctx.beginPath(); ctx.arc(128, 82, 42, 0, Math.PI * 2); ctx.fill();
+
+      // Curly Ginger Hair
+      ctx.fillStyle = '#c2410c';
+      const curls = [
+        [100, 48, 12], [115, 42, 13], [128, 40, 14], [142, 42, 13], [156, 48, 12],
+        [90, 58, 11], [166, 58, 11], [88, 70, 10], [168, 70, 10], [92, 52, 11]
+      ];
+      curls.forEach(([cx, cy, cr]) => {
+        ctx.beginPath(); ctx.arc(cx, cy, cr, 0, Math.PI * 2); ctx.fill();
+      });
+
+      // Expressive Eyes & Eyebrows
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(113, 76, 7, 0, Math.PI * 2); ctx.arc(143, 76, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#1d4ed8'; ctx.beginPath(); ctx.arc(113, 76, 3.5, 0, Math.PI * 2); ctx.arc(143, 76, 3.5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#9a3412'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(103, 65); ctx.lineTo(122, 68); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(134, 68); ctx.lineTo(153, 65); ctx.stroke();
+
+      // Ginger Beard & Detailed Smile
+      ctx.fillStyle = '#c2410c';
+      ctx.beginPath();
+      ctx.moveTo(88, 80); ctx.quadraticCurveTo(85, 122, 128, 126); ctx.quadraticCurveTo(171, 122, 168, 80);
+      ctx.quadraticCurveTo(150, 96, 128, 96); ctx.quadraticCurveTo(106, 96, 88, 80);
+      ctx.fill();
+      ctx.beginPath(); ctx.moveTo(108, 92); ctx.quadraticCurveTo(128, 86, 148, 92); ctx.quadraticCurveTo(128, 100, 108, 92); ctx.fill();
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(128, 94, 9, 0, Math.PI); ctx.fill();
+
+      // Realistic Wood Grain Ruler
+      ctx.fillStyle = '#b45309'; ctx.fillRect(182, 70, 12, 120);
+      ctx.fillStyle = '#78350f'; 
+      for(let y=75; y<190; y+=10) { ctx.fillRect(182, y, 6, 2); }
+
+      return canvas;
+    }
+
+    function createWallTexture(baseColor = '#fef08a', trimColor = '#1d4ed8') {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512; canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      
+      // Base Wall Paint Texture
+      ctx.fillStyle = baseColor;
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Brick pattern overlays
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+      ctx.lineWidth = 3;
+      const rowHeight = 32;
+      const brickWidth = 64;
+      for (let y = 0; y < 512; y += rowHeight) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke();
+        const offset = (y / rowHeight) % 2 === 0 ? 0 : brickWidth / 2;
+        for (let x = offset; x < 512; x += brickWidth) {
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + rowHeight); ctx.stroke();
+        }
+      }
+
+      // Baseboard Trim & Top Molding
+      ctx.fillStyle = trimColor;
+      ctx.fillRect(0, 0, 512, 40);
+      ctx.fillRect(0, 460, 512, 52);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+      ctx.fillRect(0, 36, 512, 4);
+      ctx.fillRect(0, 460, 512, 6);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.anisotropy = 8;
+      return texture;
+    }
+
+    function createRealisticFloorTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512; canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+
+      // Linoleum Tile Floor Grid
+      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, 0, 512, 512);
+      ctx.fillStyle = '#cbd5e1';
+      for (let i = 0; i < 512; i += 128) {
+        for (let j = 0; j < 512; j += 128) {
+          if ((i + j) % 256 === 0) ctx.fillRect(i, j, 128, 128);
+        }
+      }
+
+      // Tile Grout & Dirt Spots
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 4;
+      for (let k = 0; k <= 512; k += 128) {
+        ctx.beginPath(); ctx.moveTo(k, 0); ctx.lineTo(k, 512); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, k); ctx.lineTo(512, k); ctx.stroke();
+      }
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(12, 12);
+      return texture;
+    }
+
+    function createRealisticCeilingTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256; canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+
+      // Acoustic Ceiling Tile
+      ctx.fillStyle = '#f1f5f9'; ctx.fillRect(0, 0, 256, 256);
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 6; ctx.strokeRect(0, 0, 256, 256);
+
+      // Noise speckles on tile
+      ctx.fillStyle = '#cbd5e1';
+      for(let i = 0; i < 300; i++) {
+        ctx.fillRect(Math.random() * 256, Math.random() * 256, 2, 2);
+      }
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(12, 12);
+      return texture;
+    }
+
+    function createSpriteTexture(type) {
+      const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+      const ctx = c.getContext('2d');
+      if (type === 'rushton') {
+        return new THREE.CanvasTexture(createRushtonCanvas(256, 256));
+      } else if (type === 'zyker') {
+        ctx.fillStyle = '#dc2626'; ctx.fillRect(32, 48, 64, 60);
+        ctx.fillStyle = '#fef08a'; ctx.fillRect(36, 10, 56, 24);
+        ctx.fillStyle = '#fff0f0'; ctx.fillRect(40, 30, 48, 22);
+      } else if (type === 'nono') {
+        ctx.fillStyle = '#78716c'; ctx.fillRect(32, 50, 64, 58);
+        ctx.fillStyle = '#f5d0fe'; ctx.fillRect(36, 12, 56, 24);
+        ctx.fillStyle = '#78350f'; ctx.fillRect(16, 60, 8, 60);
+      } else if (type === 'kiki') {
+        ctx.fillStyle = '#db2777'; ctx.fillRect(32, 48, 64, 60);
+        ctx.fillStyle = '#451a03'; ctx.fillRect(32, 10, 64, 50);
+        ctx.fillStyle = '#fbcfe8'; ctx.fillRect(42, 26, 44, 26);
+      } else if (type === 'myles') {
+        ctx.fillStyle = '#0f172a'; ctx.fillRect(28, 48, 72, 60);
+        ctx.fillStyle = '#78350f'; ctx.fillRect(36, 8, 56, 26);
+        ctx.fillStyle = '#000'; ctx.fillRect(36, 34, 56, 12);
+      } else if (type === 'tom') {
+        // Tom sprite wearing a blue shirt
+        ctx.fillStyle = '#0284c7'; ctx.fillRect(32, 48, 64, 60);
+        ctx.fillStyle = '#fed7aa'; ctx.fillRect(38, 14, 52, 34);
+        ctx.fillStyle = '#451a03'; ctx.fillRect(38, 8, 52, 14); // Dark hair
+        // Chocolate bar in hand
+        ctx.fillStyle = '#78350f'; ctx.fillRect(72, 62, 24, 30); // Chocolate
+        ctx.fillStyle = '#dc2626'; ctx.fillRect(72, 76, 24, 16); // Wrapper
+      } else if (type === 'notebook') {
+        // Red Notebook Cover
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(24, 12, 88, 104);
+        ctx.fillStyle = '#b91c1c';
+        ctx.fillRect(24, 12, 10, 104);
+
+        // Silver/White Spiral Rings on Left
+        ctx.fillStyle = '#e2e8f0';
+        for (let y = 20; y <= 108; y += 12) {
+          ctx.beginPath();
+          ctx.arc(20, y, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Classic Yellow Star Accent
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath();
+        ctx.arc(68, 44, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        // White Label Box with MATH
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(40, 68, 56, 32);
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(40, 68, 56, 32);
+
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('MATH', 68, 90);
+      } else if (type === 'coin') {
+        ctx.fillStyle = '#eab308'; ctx.beginPath(); ctx.arc(64, 64, 48, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 50px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🪙', 64, 82);
+      } else if (type === 'propel') {
+        ctx.fillStyle = '#2563eb'; ctx.beginPath(); ctx.arc(64, 64, 48, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 50px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('⚡', 64, 82);
+      }
+      return new THREE.CanvasTexture(c);
+    }
+
+    function createCafeteriaTableTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256; canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#991b1b'; ctx.fillRect(0, 0, 256, 256);
+      ctx.strokeStyle = '#450a0a'; ctx.lineWidth = 12; ctx.strokeRect(6, 6, 244, 244);
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(32, 32, 192, 192);
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    function createVendingMachineTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128; canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      // Machine body
+      ctx.fillStyle = '#1e3a8a'; ctx.fillRect(0, 0, 128, 256);
+      ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 8; ctx.strokeRect(4, 4, 120, 248);
+      // Display window with Propel bottles
+      ctx.fillStyle = '#60a5fa'; ctx.fillRect(16, 20, 96, 120);
+      ctx.fillStyle = '#2563eb';
+      ctx.fillRect(28, 35, 20, 40); ctx.fillRect(54, 35, 20, 40); ctx.fillRect(80, 35, 20, 40);
+      ctx.fillRect(28, 85, 20, 40); ctx.fillRect(54, 85, 20, 40); ctx.fillRect(80, 85, 20, 40);
+      // Banner & Price
+      ctx.fillStyle = '#facc15'; ctx.fillRect(16, 148, 96, 28);
+      ctx.fillStyle = '#000'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('PROPEL 1🪙', 64, 168);
+      // Coin slot & dispense tray
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(80, 185, 28, 12);
+      ctx.fillStyle = '#000000'; ctx.fillRect(16, 205, 96, 35);
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    /* =========================================================================
+       GAME CORE ENGINE & MAP DEFINITION
+       ========================================================================= */
+    const GAME = {
+      isStarted: false,
+      notebooksCollected: 0,
+      totalNotebooks: 7,
+      inventory: [null, null, null],
+      stamina: 100,
+      coins: 0,
+      rushtonSpeed: 0.05, // Increased base speed so Mr. Rushton chases much faster
+      terminalActive: false,
+      currentNotebookObj: null,
+      questionIndex: 0,
+      q1: 0, q2: 0,
+      player: { x: 10, z: 10, radius: 1.8 }
+    };
+
+    // 24x24 Schoolhouse Map Grid
+    // 0 = Wide Hallway, 1 = Wall, 2 = Classroom, 3 = Player Spawn, 4 = Exit, 5 = Cafeteria Floor
+    const MAP_SIZE = 24;
+    const CELL_SIZE = 4;
+    const mapGrid = [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,2,2,2,2,1,0,0,0,0,3,0,0,0,0,1,5,5,5,5,5,5,5,1],
+      [1,2,2,2,2,1,0,0,0,0,0,0,0,0,0,1,5,5,5,5,5,5,5,1],
+      [1,2,2,2,2,1,0,0,0,0,0,0,0,0,0,0,5,5,5,5,5,5,5,1],
+      [1,2,2,2,2,1,0,0,0,0,0,0,0,0,0,0,5,5,5,5,5,5,5,1],
+      [1,1,0,0,1,1,0,0,0,0,0,0,0,0,0,1,5,5,5,5,5,5,5,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,1],
+      [1,2,2,0,0,2,2,1,0,0,1,2,2,0,0,2,2,1,0,0,2,2,2,1],
+      [1,2,2,0,0,2,2,1,0,0,1,2,2,0,0,2,2,1,0,0,2,2,2,1],
+      [1,2,2,0,0,2,2,1,0,0,1,2,2,0,0,2,2,1,0,0,2,2,2,1],
+      [1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,1],
+      [1,2,2,0,0,2,2,1,0,0,2,2,2,0,0,1,2,2,0,0,2,2,2,1],
+      [1,2,2,0,0,2,2,1,0,0,2,2,2,0,0,1,2,2,0,0,2,2,2,1],
+      [1,2,2,0,0,2,2,1,0,0,2,2,2,0,0,1,2,2,0,0,2,2,2,1],
+      [1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+
+    let scene, camera, renderer, flashlight;
+    let yaw = 0, pitch = 0;
+    const keys = {};
+    const interactiveObjects = [];
+    const characters = [];
+
+    function buildSchoolMap() {
+      const wallGeo = new THREE.BoxGeometry(CELL_SIZE, 3.6, CELL_SIZE);
+      
+      // Upgrade materials to Standard Materials for realistic lighting & shadows
+      const hallwayWallMat = new THREE.MeshStandardMaterial({ map: createWallTexture('#fef08a', '#2563eb'), roughness: 0.6, metalness: 0.1 });
+      const classWallMat = new THREE.MeshStandardMaterial({ map: createWallTexture('#bae6fd', '#0284c7'), roughness: 0.6, metalness: 0.1 });
+      const cafeteriaWallMat = new THREE.MeshStandardMaterial({ map: createWallTexture('#fca5a5', '#dc2626'), roughness: 0.5, metalness: 0.2 });
+      const exitDoorMat = new THREE.MeshStandardMaterial({ map: createWallTexture('#ef4444', '#15803d'), roughness: 0.4, metalness: 0.3 });
+
+      // Realistic Floor Plane
+      const floorGeo = new THREE.PlaneGeometry(MAP_SIZE * CELL_SIZE, MAP_SIZE * CELL_SIZE);
+      const floorMat = new THREE.MeshStandardMaterial({ map: createRealisticFloorTexture(), roughness: 0.3, metalness: 0.1 });
+      const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+      floorMesh.rotation.x = -Math.PI / 2;
+      floorMesh.position.set((MAP_SIZE * CELL_SIZE)/2 - CELL_SIZE/2, 0, (MAP_SIZE * CELL_SIZE)/2 - CELL_SIZE/2);
+      scene.add(floorMesh);
+
+      // Realistic Ceiling Plane
+      const ceilGeo = new THREE.PlaneGeometry(MAP_SIZE * CELL_SIZE, MAP_SIZE * CELL_SIZE);
+      const ceilMat = new THREE.MeshStandardMaterial({ map: createRealisticCeilingTexture(), roughness: 0.9, metalness: 0.0 });
+      const ceilMesh = new THREE.Mesh(ceilGeo, ceilMat);
+      ceilMesh.rotation.x = Math.PI / 2;
+      ceilMesh.position.set((MAP_SIZE * CELL_SIZE)/2 - CELL_SIZE/2, 3.6, (MAP_SIZE * CELL_SIZE)/2 - CELL_SIZE/2);
+      scene.add(ceilMesh);
+
+      // Build wall boxes for all grid tiles marked as walls or doors
+      for (let r = 0; r < MAP_SIZE; r++) {
+        for (let c = 0; c < MAP_SIZE; c++) {
+          const tile = mapGrid[r][c];
+          const posX = c * CELL_SIZE;
+          const posZ = r * CELL_SIZE;
+
+          if (tile === 1) {
+            const isCafeteria = (r > 0 && mapGrid[r-1][c] === 5) || (r < MAP_SIZE-1 && mapGrid[r+1][c] === 5) ||
+                                (c > 0 && mapGrid[r][c-1] === 5) || (c < MAP_SIZE-1 && mapGrid[r][c+1] === 5);
+            const isClass = (r > 0 && mapGrid[r-1][c] === 2) || (r < MAP_SIZE-1 && mapGrid[r+1][c] === 2) ||
+                            (c > 0 && mapGrid[r][c-1] === 2) || (c < MAP_SIZE-1 && mapGrid[r][c+1] === 2);
+            
+            const wallMat = isCafeteria ? cafeteriaWallMat : (isClass ? classWallMat : hallwayWallMat);
+            const wall = new THREE.Mesh(wallGeo, wallMat);
+            wall.position.set(posX, 1.8, posZ);
+            scene.add(wall);
+          } else if (tile === 4) {
+            const door = new THREE.Mesh(wallGeo, exitDoorMat);
+            door.position.set(posX, 1.8, posZ);
+            scene.add(door);
+          } else if (tile === 3) {
+            GAME.player = { x: posX, z: posZ, radius: 1.8 };
+            camera.position.set(posX, 1.6, posZ);
+          } else if (tile === 5) {
+            if (r % 2 === 0 && c % 2 === 0) {
+              const tableGeo = new THREE.BoxGeometry(2.4, 1.0, 1.4);
+              const tableMat = new THREE.MeshStandardMaterial({ map: createCafeteriaTableTexture(), roughness: 0.4 });
+              const table = new THREE.Mesh(tableGeo, tableMat);
+              table.position.set(posX, 0.5, posZ);
+              scene.add(table);
+            }
+          }
+
+          // Overhead Realistic Fluorescent Light Fixtures
+          if ((tile === 0 || tile === 5) && (r % 3 === 0) && (c % 3 === 0)) {
+            const lightColor = tile === 5 ? 0xffedd5 : 0xf8fafc;
+            const light = new THREE.PointLight(lightColor, 1.2, 16);
+            light.position.set(posX, 3.2, posZ);
+            scene.add(light);
+          }
+        }
+      }
+    }
+
+    function spawnEntities() {
+      // Clear interactive objects
+      interactiveObjects.length = 0;
+      characters.length = 0;
+
+      // Spawn 7 Notebooks (including one in the Cafeteria)
+      const notebookLocations = [
+        { r: 2, c: 2 }, { r: 3, c: 18 }, { r: 11, c: 2 },
+        { r: 11, c: 12 }, { r: 18, c: 2 }, { r: 18, c: 11 }, { r: 18, c: 21 }
+      ];
+
+      const notebookMat = new THREE.SpriteMaterial({ map: createSpriteTexture('notebook') });
+      notebookLocations.forEach((loc) => {
+        const sprite = new THREE.Sprite(notebookMat);
+        sprite.scale.set(1.4, 1.4, 1);
+        sprite.position.set(loc.c * CELL_SIZE, 1.4, loc.r * CELL_SIZE);
+        sprite.userData = { type: 'notebook' };
+        scene.add(sprite);
+        interactiveObjects.push(sprite);
+      });
+
+      // Spawn Coins and Items across Cafeteria & Hallways
+      const coinMat = new THREE.SpriteMaterial({ map: createSpriteTexture('coin') });
+      const propelMat = new THREE.SpriteMaterial({ map: createSpriteTexture('propel') });
+
+      const itemSpawns = [
+        { r: 2, c: 19, type: 'coin' }, { r: 4, c: 21, type: 'propel' }, { r: 7, c: 8, type: 'coin' },
+        { r: 14, c: 10, type: 'coin' }, { r: 21, c: 4, type: 'propel' }, { r: 21, c: 18, type: 'coin' }
+      ];
+
+      itemSpawns.forEach((loc) => {
+        const mat = loc.type === 'coin' ? coinMat : propelMat;
+        const sprite = new THREE.Sprite(mat);
+        sprite.scale.set(1.2, 1.2, 1);
+        sprite.position.set(loc.c * CELL_SIZE, 1.0, loc.r * CELL_SIZE);
+        sprite.userData = { type: loc.type };
+        scene.add(sprite);
+        interactiveObjects.push(sprite);
+      });
+
+      // Spawn Vending Machines (in Cafeteria and Main Hallway)
+      const vendingTex = createVendingMachineTexture();
+      const vendingMat = new THREE.MeshStandardMaterial({ map: vendingTex, roughness: 0.3 });
+      const vendingGeo = new THREE.BoxGeometry(1.6, 2.8, 1.0);
+
+      const vendingSpawns = [
+        { r: 1, c: 16, rot: 0 },   // Cafeteria Entrance
+        { r: 6, c: 11, rot: Math.PI / 2 },  // Main Hallway Intersection
+        { r: 14, c: 1, rot: -Math.PI / 2 }  // West Hallway Corridor
+      ];
+
+      vendingSpawns.forEach(loc => {
+        const machine = new THREE.Mesh(vendingGeo, vendingMat);
+        machine.position.set(loc.c * CELL_SIZE, 1.4, loc.r * CELL_SIZE);
+        machine.rotation.y = loc.rot;
+        machine.userData = { type: 'vending' };
+        scene.add(machine);
+        interactiveObjects.push(machine);
+      });
+
+      // Spawn Antagonists and Hallway Characters
+      const rushtonSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: createSpriteTexture('rushton') }));
+      rushtonSprite.scale.set(2.4, 2.4, 1);
+      rushtonSprite.position.set(14 * CELL_SIZE, 1.4, 14 * CELL_SIZE);
+      rushtonSprite.userData = { type: 'rushton' };
+      scene.add(rushtonSprite);
+      characters.push(rushtonSprite);
+
+      const charTypes = [
+        { name: 'zyker', r: 1, c: 6 },
+        { name: 'nono', r: 2, c: 17 }, // Hangs out near the Cafeteria
+        { name: 'kiki', r: 14, c: 18 },
+        { name: 'myles', r: 21, c: 10 },
+        { name: 'tom', r: 3, c: 20 }   // Tom enjoying chocolate in the cafeteria
+      ];
+
+      charTypes.forEach(c => {
+        const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: createSpriteTexture(c.name) }));
+        spr.scale.set(2.2, 2.2, 1);
+        spr.position.set(c.c * CELL_SIZE, 1.3, c.r * CELL_SIZE);
+        spr.userData = { type: c.name };
+        scene.add(spr);
+        characters.push(spr);
+        interactiveObjects.push(spr); // Allow clicking or pressing [E] to talk
+      });
+
+      // Render Mr. Rushton avatar for terminal dialogs
+      const avatarCanvas = document.getElementById('rushton-avatar');
+      if (avatarCanvas) {
+        avatarCanvas.getContext('2d').drawImage(createRushtonCanvas(256, 256), 0, 0, 64, 64);
+      }
+    }
+
+    /* =========================================================================
+       INITIALIZATION & CONTROLS
+       ========================================================================= */
+    function init() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x020617);
+      scene.fog = new THREE.FogExp2(0x020617, 0.03);
+
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.rotation.order = 'YXZ';
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.1;
+      document.getElementById('game-container').appendChild(renderer.domElement);
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
+      scene.add(ambientLight);
+
+      // Realistic Focused Flashlight
+      flashlight = new THREE.SpotLight(0xfffbeb, 3.5, 25, Math.PI / 6, 0.4, 1.2);
+      camera.add(flashlight);
+      camera.add(flashlight.target);
+      flashlight.target.position.set(0, 0, -1);
+      scene.add(camera);
+
+      buildSchoolMap();
+      spawnEntities();
+      setupEventListeners();
+      animate();
+    }
+
+    function setupEventListeners() {
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      document.addEventListener('keydown', (e) => {
+        keys[e.code] = true;
+        if (e.code === 'KeyF' && flashlight) flashlight.visible = !flashlight.visible;
+        if (e.code === 'KeyE') checkInteractions();
+        if (e.code === 'Space') usePropel();
+      });
+
+      document.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+      const container = document.getElementById('game-container');
+      container.addEventListener('click', () => {
+        if (GAME.isStarted && !GAME.terminalActive) {
+          container.requestPointerLock();
+          checkInteractions();
+        }
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (!GAME.isStarted || GAME.terminalActive || document.pointerLockElement !== container) return;
+        yaw -= e.movementX * 0.0025;
+        pitch -= e.movementY * 0.0025;
+        pitch = Math.max(-1.4, Math.min(1.4, pitch));
+        camera.rotation.y = yaw;
+        camera.rotation.x = pitch;
+      });
+
+      // UI Buttons
+      document.getElementById('start-btn').addEventListener('click', startGame);
+      document.getElementById('restart-btn').addEventListener('click', resetGame);
+      document.getElementById('victory-restart-btn').addEventListener('click', resetGame);
+      document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
+      document.getElementById('char-dialogue-close').addEventListener('click', () => {
+        document.getElementById('char-dialogue-modal').classList.add('hidden');
+        GAME.terminalActive = false;
+        if (document.getElementById('game-container').requestPointerLock) {
+          document.getElementById('game-container').requestPointerLock();
+        }
+      });
+
+      document.getElementById('math-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        submitMathAnswer();
+      });
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+
+    function startGame() {
+      audio.init();
+      GAME.isStarted = true;
+      document.getElementById('start-screen').classList.add('hidden');
+      document.getElementById('hud').classList.remove('hidden');
+      document.getElementById('game-container').requestPointerLock();
+    }
+
+    function showMessage(msg) {
+      const el = document.getElementById('game-msg');
+      el.innerText = msg;
+      el.style.opacity = '1';
+      setTimeout(() => { el.style.opacity = '0'; }, 2500);
+    }
+
+    /* =========================================================================
+       INTERACTION & ITEM LOGIC
+       ========================================================================= */
+    function checkInteractions() {
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+      const intersects = raycaster.intersectObjects(interactiveObjects);
+
+      if (intersects.length > 0 && intersects[0].distance < 3.8) {
+        const obj = intersects[0].object;
+        const type = obj.userData.type;
+
+        if (type === 'notebook') {
+          openMathTerminal(obj);
+        } else if (type === 'coin') {
+          GAME.coins++;
+          document.getElementById('coin-count').innerText = GAME.coins;
+          audio.playChime(true);
+          scene.remove(obj);
+          interactiveObjects.splice(interactiveObjects.indexOf(obj), 1);
+          showMessage("+1 Coin Collected!");
+        } else if (type === 'propel') {
+          addInventory('Propel');
+          scene.remove(obj);
+          interactiveObjects.splice(interactiveObjects.indexOf(obj), 1);
+        } else if (type === 'vending') {
+          if (GAME.coins >= 1) {
+            GAME.coins--;
+            document.getElementById('coin-count').innerText = GAME.coins;
+            addInventory('Propel');
+            audio.playBsoda();
+            showMessage("Bought Propel drink for 1 Coin!");
+          } else {
+            audio.playChime(false);
+            showMessage("Need 1 Coin to buy Propel!");
+          }
+        } else if (['zyker', 'nono', 'kiki', 'myles', 'tom'].includes(type)) {
+          interactWithCharacter(type);
+        }
+      }
+    }
+
+    function interactWithCharacter(type) {
+      GAME.terminalActive = true;
+      if (document.exitPointerLock) document.exitPointerLock();
+
+      const modal = document.getElementById('char-dialogue-modal');
+      const nameEl = document.getElementById('char-name');
+      const textEl = document.getElementById('char-text');
+
+      if (type === 'zyker') {
+        nameEl.innerText = "Zyker (Blonde Hair)";
+        textEl.innerText = '"Hey! I saw Mr. Rushton patrolling by classroom 3. Watch out for his wooden ruler!"';
+        audio.playChime(true);
+      } else if (type === 'nono') {
+        nameEl.innerText = "Nono (Elderly Hallway Monitor)";
+        textEl.innerText = '"Back in my day we had 10 notebooks! Here, take some extra stamina kid!"';
+        GAME.stamina = 100;
+        audio.playChime(true);
+      } else if (type === 'kiki') {
+        nameEl.innerText = "Kiki (Brown Hair)";
+        textEl.innerText = '"Nobody likes me... but don\'t get caught by Mr. Rushton or you\'ll get a Red Sheet!"';
+        audio.playChime(false);
+      } else if (type === 'myles') {
+        nameEl.innerText = "Myles Ori (Coolest Guy in School)";
+        textEl.innerText = '"Stay cool! Here\'s a quarter for the Propel vending machine!"';
+        GAME.coins += 1;
+        document.getElementById('coin-count').innerText = GAME.coins;
+        audio.playChime(true);
+      } else if (type === 'tom') {
+        nameEl.innerText = "Tom";
+        textEl.innerText = '"Mmm... chocolate! Eating sweets gives me so much energy! Keep up the stamina!"';
+        GAME.stamina = Math.min(100, GAME.stamina + 50);
+        audio.playChime(true);
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function addInventory(item) {
+      for (let i = 0; i < 3; i++) {
+        if (!GAME.inventory[i]) {
+          GAME.inventory[i] = item;
+          document.getElementById(`item-${i}`).innerText = '⚡';
+          audio.playChime(true);
+          showMessage("Picked up Propel drink!");
+          return;
+        }
+      }
+      showMessage("Inventory Full!");
+    }
+
+    function usePropel() {
+      const index = GAME.inventory.indexOf('Propel');
+      if (index !== -1) {
+        GAME.inventory[index] = null;
+        document.getElementById(`item-${index}`).innerText = '';
+        GAME.stamina = 100;
+        audio.playBsoda();
+        showMessage("Drank Propel! Stamina Restored!");
+      }
+    }
+
+    /* =========================================================================
+       MATH TERMINAL LOGIC & SECRET CODE 67
+       ========================================================================= */
+    function openMathTerminal(obj) {
+      GAME.terminalActive = true;
+      GAME.currentNotebookObj = obj;
+      GAME.questionIndex = 0;
+      if (document.exitPointerLock) document.exitPointerLock();
+      document.getElementById('math-terminal').classList.remove('hidden');
+      nextMathQuestion();
+    }
+
+    function nextMathQuestion() {
+      const input = document.getElementById('math-input');
+      input.value = '';
+      input.focus();
+      GAME.q1 = Math.floor(Math.random() * 10);
+      GAME.q2 = Math.floor(Math.random() * 10);
+      document.getElementById('question-number').innerText = `QUESTION ${GAME.questionIndex + 1} OF 3`;
+      document.getElementById('question-text').innerText = `${GAME.q1} + ${GAME.q2} = ?`;
+    }
+
+    function submitMathAnswer() {
+      const val = document.getElementById('math-input').value.trim();
+      
+      // Secret Code 67 Trigger
+      if (val === '67') {
+        document.getElementById('math-terminal').classList.add('hidden');
+        GAME.terminalActive = false;
+        triggerRedSheet("Entered Secret Code 67!");
+        return;
+      }
+
+      const isCorrect = parseInt(val) === (GAME.q1 + GAME.q2);
+      audio.playChime(isCorrect);
+
+      if (!isCorrect) {
+        GAME.rushtonSpeed += 0.025; // Speed increases even faster on incorrect answers
+        showMessage("Wrong answer! Mr. Rushton is speeding up!");
+      }
+
+      GAME.questionIndex++;
+      if (GAME.questionIndex >= 3) {
+        document.getElementById('math-terminal').classList.add('hidden');
+        GAME.terminalActive = false;
+        if (document.getElementById('game-container').requestPointerLock) {
+          document.getElementById('game-container').requestPointerLock();
+        }
+
+        if (GAME.currentNotebookObj) {
+          scene.remove(GAME.currentNotebookObj);
+          interactiveObjects.splice(interactiveObjects.indexOf(GAME.currentNotebookObj), 1);
+          GAME.notebooksCollected++;
+          document.getElementById('notebook-count').innerText = `${GAME.notebooksCollected}/${GAME.totalNotebooks}`;
+          showMessage(`Collected Notebook ${GAME.notebooksCollected}/7!`);
+
+          if (GAME.notebooksCollected >= GAME.totalNotebooks) {
+            document.getElementById('victory-modal').classList.remove('hidden');
+            if (document.exitPointerLock) document.exitPointerLock();
+          }
+        }
+      } else {
+        nextMathQuestion();
+      }
+    }
+
+    /* =========================================================================
+       DETENTION & GAME OVER
+       ========================================================================= */
+    function triggerRedSheet(reason) {
+      audio.playJumpScare();
+      document.getElementById('detention-reason').innerText = reason;
+      document.getElementById('red-sheet-modal').classList.remove('hidden');
+      if (document.exitPointerLock) document.exitPointerLock();
+      GAME.isStarted = false;
+    }
+
+    function resetGame() {
+      location.reload();
+    }
+
+    /* =========================================================================
+       GAME LOOP & MOVEMENT
+       ========================================================================= */
+    function animate() {
+      requestAnimationFrame(animate);
+
+      if (GAME.isStarted && !GAME.terminalActive) {
+        // Boosted player movement and sprinting speeds
+        const moveSpeed = (keys['ShiftLeft'] || keys['ShiftRight']) && GAME.stamina > 0 ? 0.16 : 0.095;
+        
+        if ((keys['ShiftLeft'] || keys['ShiftRight']) && GAME.stamina > 0) {
+          GAME.stamina = Math.max(0, GAME.stamina - 0.3);
+        } else if (GAME.stamina < 100) {
+          GAME.stamina = Math.min(100, GAME.stamina + 0.15);
+        }
+
+        document.getElementById('stamina-bar').style.width = `${GAME.stamina}%`;
+
+        const moveDir = new THREE.Vector3();
+        if (keys['KeyW']) moveDir.z -= 1;
+        if (keys['KeyS']) moveDir.z += 1;
+        if (keys['KeyA']) moveDir.x -= 1;
+        if (keys['KeyD']) moveDir.x += 1;
+
+        moveDir.normalize();
+        moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+
+        const nextX = camera.position.x + moveDir.x * moveSpeed;
+        const nextZ = camera.position.z + moveDir.z * moveSpeed;
+
+        // Grid Collision Checks
+        const gridX = Math.floor((nextX + CELL_SIZE/2) / CELL_SIZE);
+        const gridZ = Math.floor((nextZ + CELL_SIZE/2) / CELL_SIZE);
+
+        if (gridZ >= 0 && gridZ < MAP_SIZE && gridX >= 0 && gridX < MAP_SIZE) {
+          if (mapGrid[gridZ][gridX] !== 1) {
+            camera.position.x = nextX;
+            camera.position.z = nextZ;
+          }
+        }
+
+        // Update Antagonist Movement (Mr. Rushton chases player)
+        characters.forEach(char => {
+          if (char.userData.type === 'rushton') {
+            const dir = new THREE.Vector3().subVectors(camera.position, char.position);
+            dir.y = 0;
+            const dist = dir.length();
+            if (dist < 1.8) {
+              triggerRedSheet("Caught by Mr. Rushton!");
+            } else {
+              dir.normalize();
+              char.position.addScaledVector(dir, GAME.rushtonSpeed);
+            }
+          }
+        });
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
